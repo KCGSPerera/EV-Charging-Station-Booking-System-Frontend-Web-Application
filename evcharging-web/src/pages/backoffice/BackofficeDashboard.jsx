@@ -10,6 +10,7 @@ import {
   FaUserShield
 } from "react-icons/fa";
 import Admins from "./Admins";
+import Operators from "./Operators";
 
 
 export default function BackofficeDashboard() {
@@ -42,12 +43,7 @@ export default function BackofficeDashboard() {
           </div>
         );
       case "operators":
-        return (
-          <div className="p-6">
-            👷‍♂️ <b>Station Operator Management</b> — Create and assign station
-            operators
-          </div>
-        );
+        return <Operators />;
       case "bookings":
         return (
           <div className="p-6">
