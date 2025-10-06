@@ -1,7 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
-import { FaUsers, FaChargingStation, FaUserCog, FaClipboardList, FaSignOutAlt } from "react-icons/fa";
+import {
+  FaUsers,
+  FaChargingStation,
+  FaUserCog,
+  FaClipboardList,
+  FaSignOutAlt,
+  FaUserShield
+} from "react-icons/fa";
+import Admins from "./Admins";
+
 
 export default function BackofficeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -16,18 +25,41 @@ export default function BackofficeDashboard() {
   // Components for subpages (lazy placeholder for now)
   const renderContent = () => {
     switch (activeTab) {
+      case "admins":
+        return <Admins />;
       case "owners":
-        return <div className="p-6">🧍‍♂️ <b>EV Owner Management</b> — View, Add, Edit, and Deactivate EV Owners</div>;
+        return (
+          <div className="p-6">
+            🧍‍♂️ <b>EV Owner Management</b> — View, Add, Edit, and Deactivate EV
+            Owners
+          </div>
+        );
       case "stations":
-        return <div className="p-6">⚡ <b>Station Management</b> — Manage station details and availability</div>;
+        return (
+          <div className="p-6">
+            ⚡ <b>Station Management</b> — Manage station details and
+            availability
+          </div>
+        );
       case "operators":
-        return <div className="p-6">👷‍♂️ <b>Station Operator Management</b> — Create and assign station operators</div>;
+        return (
+          <div className="p-6">
+            👷‍♂️ <b>Station Operator Management</b> — Create and assign station
+            operators
+          </div>
+        );
       case "bookings":
-        return <div className="p-6">📋 <b>Booking Management</b> — Monitor and manage reservations</div>;
+        return (
+          <div className="p-6">
+            📋 <b>Booking Management</b> — Monitor and manage reservations
+          </div>
+        );
       default:
         return (
           <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4 text-blue-700">Admin Dashboard Overview</h2>
+            <h2 className="text-2xl font-bold mb-4 text-blue-700">
+              Admin Dashboard Overview
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-blue-100 p-4 rounded shadow text-center">
                 <h3 className="text-xl font-semibold">Total Stations</h3>
@@ -58,6 +90,7 @@ export default function BackofficeDashboard() {
         <div className="text-center font-bold text-xl py-4 border-b border-blue-700">
           ⚙️ Backoffice Admin
         </div>
+
         <nav className="flex-1 p-4">
           <ul className="space-y-3">
             <li
@@ -68,6 +101,16 @@ export default function BackofficeDashboard() {
             >
               <FaClipboardList /> Overview
             </li>
+
+            <li
+              className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
+                activeTab === "admins" && "bg-blue-800"
+              }`}
+              onClick={() => setActiveTab("admins")}
+            >
+              <FaUserShield /> Backoffice Admins
+            </li>
+
             <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
                 activeTab === "owners" && "bg-blue-800"
@@ -76,6 +119,7 @@ export default function BackofficeDashboard() {
             >
               <FaUsers /> EV Owners
             </li>
+
             <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
                 activeTab === "stations" && "bg-blue-800"
@@ -84,6 +128,7 @@ export default function BackofficeDashboard() {
             >
               <FaChargingStation /> Stations
             </li>
+
             <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
                 activeTab === "operators" && "bg-blue-800"
@@ -92,6 +137,7 @@ export default function BackofficeDashboard() {
             >
               <FaUserCog /> Operators
             </li>
+
             <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
                 activeTab === "bookings" && "bg-blue-800"
