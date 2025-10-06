@@ -10,7 +10,8 @@ import {
   FaUserShield
 } from "react-icons/fa";
 import Admins from "./Admins";
-
+import Operators from "./Operators";
+import Owners from "./Owners";
 
 export default function BackofficeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -28,12 +29,7 @@ export default function BackofficeDashboard() {
       case "admins":
         return <Admins />;
       case "owners":
-        return (
-          <div className="p-6">
-            🧍‍♂️ <b>EV Owner Management</b> — View, Add, Edit, and Deactivate EV
-            Owners
-          </div>
-        );
+        return <Owners />;
       case "stations":
         return (
           <div className="p-6">
@@ -42,12 +38,7 @@ export default function BackofficeDashboard() {
           </div>
         );
       case "operators":
-        return (
-          <div className="p-6">
-            👷‍♂️ <b>Station Operator Management</b> — Create and assign station
-            operators
-          </div>
-        );
+        return <Operators />;
       case "bookings":
         return (
           <div className="p-6">
