@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Login from "./pages/auth/Login";
-import BackofficeDashboard from "./pages/backoffice/Dashboard";
+import BackofficeDashboard from "./pages/backoffice/BackofficeDashboard";
 import OperatorDashboard from "./pages/operator/Dashboard";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
