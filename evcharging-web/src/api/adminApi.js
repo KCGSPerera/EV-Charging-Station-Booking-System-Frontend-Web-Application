@@ -36,7 +36,7 @@ export async function createAdmin(adminData) {
 // ✅ Update admin
 export async function updateAdmin(id, adminData) {
   const token = localStorage.getItem("token");
-  const response = await axios.put(`${API_URL}/${id}`, adminData, {
+  const response = await axios.patch(`${API_URL}/${id}`, adminData, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
