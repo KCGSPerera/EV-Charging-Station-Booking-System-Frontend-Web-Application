@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import Admins from "./Admins";
 import Operators from "./Operators";
-
+import Owners from "./Owners";
 
 export default function BackofficeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -29,12 +29,7 @@ export default function BackofficeDashboard() {
       case "admins":
         return <Admins />;
       case "owners":
-        return (
-          <div className="p-6">
-            🧍‍♂️ <b>EV Owner Management</b> — View, Add, Edit, and Deactivate EV
-            Owners
-          </div>
-        );
+        return <Owners />;
       case "stations":
         return (
           <div className="p-6">
