@@ -12,6 +12,7 @@ import {
 import Admins from "./Admins";
 import Operators from "./Operators";
 import Owners from "./Owners";
+import Stations from "./Stations";
 
 export default function BackofficeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -31,12 +32,7 @@ export default function BackofficeDashboard() {
       case "owners":
         return <Owners />;
       case "stations":
-        return (
-          <div className="p-6">
-            ⚡ <b>Station Management</b> — Manage station details and
-            availability
-          </div>
-        );
+        return <Stations />;
       case "operators":
         return <Operators />;
       case "bookings":
