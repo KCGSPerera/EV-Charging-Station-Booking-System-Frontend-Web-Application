@@ -13,6 +13,7 @@ import Admins from "./Admins";
 import Operators from "./Operators";
 import Owners from "./Owners";
 import Stations from "./Stations";
+import Bookings from "./Bookings";
 
 export default function BackofficeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -36,11 +37,7 @@ export default function BackofficeDashboard() {
       case "operators":
         return <Operators />;
       case "bookings":
-        return (
-          <div className="p-6">
-            📋 <b>Booking Management</b> — Monitor and manage reservations
-          </div>
-        );
+        return <Bookings />;
       default:
         return (
           <div className="p-6">
