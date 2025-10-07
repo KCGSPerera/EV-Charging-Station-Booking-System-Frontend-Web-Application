@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./pages/auth/Login";
 import BackofficeDashboard from "./pages/backoffice/BackofficeDashboard";
-import OperatorDashboard from "./pages/operator/Dashboard";
+import StationOperatorDashboard from "./pages/stationoperator/StationOperatorDashboard";
 
 // ✅ Import Global Google Maps Provider
 import { GoogleMapsProvider } from "./components/GoogleMapsProvider";
@@ -18,7 +18,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/backoffice" element={<BackofficeDashboard />} />
-            <Route path="/operator" element={<OperatorDashboard />} />
+            <Route path="/operator" element={<StationOperatorDashboard />} />
             <Route path="*" element={<Login />} />
           </Routes>
 
