@@ -1,13 +1,11 @@
-// ====================================================
-// ✅ adminStationApi.js — Back Office Station Management API
-// ====================================================
+// ============================================================
+// ✅ adminStationApi.js — Station Management API (Updated)
+// ============================================================
 
 import axios from "axios";
 
-// ✅ Base URL (matches Swagger + backend route)
-const API_URL = "http://localhost:5062/api/admin/stations";
+const API_URL = "http://localhost:5062/api/stations";
 
-// ✅ Auth header helper
 const authHeader = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -19,12 +17,25 @@ const authHeader = () => ({
 // 🔹 Create Station
 // -----------------------------
 export async function createStation(stationData) {
-  const response = await axios.post(API_URL, stationData, authHeader());
+  // ✅ Build correct payload
+  const payload = {
+    name: stationData.name,
+    operatorNic: stationData.operatorNic,
+    type: stationData.type,
+    google: {
+      placeId: stationData.google?.placeId || "",
+      lat: stationData.google?.lat || stationData.location?.latitude || 0,
+      lng: stationData.google?.lng || stationData.location?.longitude || 0,
+      address: stationData.google?.address || "Manual selection",
+    },
+  };
+
+  const response = await axios.post(API_URL, payload, authHeader());
   return response.data;
 }
 
 // -----------------------------
-// 🔹 Get All Stations (with optional search + pagination)
+// 🔹 Get All Stations
 // -----------------------------
 export async function getAllStations(q = "", skip = 0, take = 50) {
   const params = { q, skip, take };
@@ -41,18 +52,32 @@ export async function getStationById(id) {
 }
 
 // -----------------------------
-// 🔹 Update Station Details
+// 🔹 Update Station
 // -----------------------------
-export async function updateStation(id, updatedData) {
-  const response = await axios.patch(`${API_URL}/${id}`, updatedData, authHeader());
+export async function updateStation(id, stationData) {
+  const payload = {
+    name: stationData.name,
+    operatorNic: stationData.operatorNic,
+    type: stationData.type,
+    google: {
+      placeId: stationData.google?.placeId || "",
+      lat: stationData.google?.lat || stationData.location?.latitude || 0,
+      lng: stationData.google?.lng || stationData.location?.longitude || 0,
+      address: stationData.google?.address || "Manual update",
+    },
+  };
+  const response = await axios.patch(`${API_URL}/${id}`, payload, authHeader());
   return response.data;
 }
 
 // -----------------------------
-// 🔹 Update Station Status (activate/deactivate)
+// 🔹 Activate / Deactivate
 // -----------------------------
-export async function updateStationStatus(id, status) {
-  await axios.patch(`${API_URL}/${id}/status`, { status }, authHeader());
+export async function activateStation(id) {
+  await axios.post(`${API_URL}/${id}/activate`, {}, authHeader());
+}
+export async function deactivateStation(id) {
+  await axios.post(`${API_URL}/${id}/deactivate`, {}, authHeader());
 }
 
 // -----------------------------
