@@ -72,3 +72,15 @@ export async function deactivateEvOwner(nic) {
 export async function resetEvOwnerPassword(nic, newPassword) {
   await axios.patch(`${API_URL}/${nic}/password`, { newPassword }, authHeader());
 }
+
+// -----------------------------
+// 🔹 Get All EV Owners (Admin)
+// -----------------------------
+export async function getAllEvOwners(q = "", skip = 0, take = 50) {
+  const params = { q, skip, take };
+  const response = await axios.get("http://localhost:5062/api/admin/owners", {
+    ...authHeader(),
+    params,
+  });
+  return response.data;
+}

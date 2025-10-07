@@ -1,5 +1,5 @@
 // ============================================================
-// ✅ Owners.jsx — Back Office EV Owner Management (Final)
+// ✅ Owners.jsx — Back Office EV Owner Management (With All Tab)
 // ============================================================
 
 import { useEffect, useState } from "react";
@@ -8,6 +8,7 @@ import {
   getPendingEvOwners,
   getDeactivatedEvOwners,
   getEvOwnerByNic,
+  getAllEvOwners, // ✅ added new API
   activateEvOwner,
   deactivateEvOwner,
   resetEvOwnerPassword,
@@ -15,7 +16,7 @@ import {
 import { FaSearch, FaSync, FaEye } from "react-icons/fa";
 
 export default function Owners() {
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("all");
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchNic, setSearchNic] = useState("");
@@ -29,7 +30,8 @@ export default function Owners() {
     try {
       setLoading(true);
       let data = [];
-      if (activeTab === "pending") data = await getPendingEvOwners();
+      if (activeTab === "all") data = await getAllEvOwners();
+      else if (activeTab === "pending") data = await getPendingEvOwners();
       else if (activeTab === "deactivated") data = await getDeactivatedEvOwners();
       setOwners(data);
     } catch (err) {
@@ -119,7 +121,7 @@ export default function Owners() {
 
       {/* Tabs */}
       <div className="flex gap-3 mb-6">
-        {["pending", "deactivated"].map((tab) => (
+        {["all", "pending", "deactivated"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -129,7 +131,11 @@ export default function Owners() {
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            {tab === "pending" ? "Pending Owners" : "Deactivated Owners"}
+            {tab === "all"
+              ? "All Owners"
+              : tab === "pending"
+              ? "Pending Owners"
+              : "Deactivated Owners"}
           </button>
         ))}
         <button
