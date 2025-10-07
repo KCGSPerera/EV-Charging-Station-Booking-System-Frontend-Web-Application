@@ -33,7 +33,7 @@ export default function Login() {
         setTimeout(() => {
           if (role === "backoffice") {
             navigate("/backoffice");
-          } else if (role === "stationoperator") {
+          } else if (role === "station_operator") {
             navigate("/operator");
           } else {
             toast.warning("Unknown role, returning to login.");
