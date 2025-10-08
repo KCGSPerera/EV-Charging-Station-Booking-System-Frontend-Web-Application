@@ -17,6 +17,7 @@ import {
 import {
   getChargersByStation,
   createCharger,
+  getChargerById,
   updateChargerStatus,
   deleteCharger,
 } from "../../api/chargersApi";
@@ -43,6 +44,10 @@ export default function Charging() {
     // ---------------- DELETE CONFIRMATION MODAL ----------------
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+
+    // ---------------- VIEW CHARGER MODAL ----------------
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedCharger, setSelectedCharger] = useState(null);
 
 
   // ---------------- FETCH ALL STATIONS ----------------
@@ -191,6 +196,19 @@ export default function Charging() {
     }
   };
 
+    // ---------------- VIEW CHARGER DETAILS ----------------
+  const handleViewCharger = async (chargerId) => {
+    try {
+      const data = await getChargerById(chargerId);
+      setSelectedCharger(data);
+      setShowViewModal(true);
+    } catch (error) {
+      console.error(error);
+      toast.error("❌ Failed to fetch charger details.");
+    }
+  };
+
+
   // ---------------- RENDER ----------------
   return (
     <div className="p-6">
@@ -296,9 +314,11 @@ export default function Charging() {
                   </td> */}
                   <td className="p-3 text-center flex justify-center gap-3">
                     <FaEye
-                      className="text-blue-600 cursor-pointer hover:text-blue-800"
-                      title="View"
-                    />
+  onClick={() => handleViewCharger(c.id)}
+  className="text-blue-600 cursor-pointer hover:text-blue-800"
+  title="View"
+/>
+
                     <FaEdit
                       className="text-green-600 cursor-pointer hover:text-green-800"
                       title="Edit"
@@ -483,6 +503,37 @@ export default function Charging() {
                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* VIEW CHARGER MODAL */}
+      {showViewModal && selectedCharger && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+            <h3 className="text-xl font-semibold text-blue-700 mb-4">
+              Charger Details
+            </h3>
+
+            <div className="space-y-2 text-gray-700">
+              <p><strong>Code:</strong> {selectedCharger.code}</p>
+              <p><strong>Connector Type:</strong> {selectedCharger.connectorType}</p>
+              <p><strong>Power (kW):</strong> {selectedCharger.powerKw}</p>
+              <p><strong>Status:</strong> {selectedCharger.status}</p>
+              <p><strong>Station ID:</strong> {selectedCharger.stationId}</p>
+              <p><strong>Created At:</strong> {new Date(selectedCharger.createdAt).toLocaleString()}</p>
+              <p><strong>Updated At:</strong> {new Date(selectedCharger.updatedAt).toLocaleString()}</p>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Close
               </button>
             </div>
           </div>
