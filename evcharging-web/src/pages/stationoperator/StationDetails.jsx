@@ -30,7 +30,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   getMyStations,
   updateOperatorStation,
-} from "../../api/operatorStationApi";
+} from "../../api/stationOperatorApi";
 
 export default function StationDetails() {
   const { user } = useAuth(); // ✅ get user and token
