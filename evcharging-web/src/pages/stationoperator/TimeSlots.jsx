@@ -415,11 +415,11 @@ const [selectedCharger, setSelectedCharger] = useState(null);
                     </h4>
                     <span
                       className={`text-sm font-semibold px-2 py-1 rounded ${
-                        slot.status === "Available"
+                        slot.status === "available"
                           ? "bg-green-200 text-green-800"
-                          : slot.status === "Busy"
+                          : slot.status === "busy"
                           ? "bg-blue-200 text-blue-800"
-                          : slot.status === "Cancelled"
+                          : slot.status === "cancelled"
                           ? "bg-red-200 text-red-800"
                           : "bg-gray-200 text-gray-700"
                       }`}
