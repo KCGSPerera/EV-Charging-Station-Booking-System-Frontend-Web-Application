@@ -511,7 +511,7 @@ export default function Charging() {
 
 
       {/* VIEW CHARGER MODAL */}
-      {showViewModal && selectedCharger && (
+      {/* {showViewModal && selectedCharger && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
             <h3 className="text-xl font-semibold text-blue-700 mb-4">
@@ -538,7 +538,73 @@ export default function Charging() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
+
+      {showViewModal && selectedCharger && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg relative border border-gray-200">
+      {/* Header */}
+      <div className="flex justify-between items-center border-b pb-3 mb-4">
+        <h3 className="text-2xl font-semibold text-blue-700">
+          ⚡ Charger Details
+        </h3>
+        <button
+          onClick={() => setShowViewModal(false)}
+          className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Charger Info */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-gray-800">
+        <p className="font-semibold text-gray-600">Code:</p>
+        <p>{selectedCharger.code}</p>
+
+        <p className="font-semibold text-gray-600">Connector Type:</p>
+        <p>{selectedCharger.connectorType}</p>
+
+        <p className="font-semibold text-gray-600">Power (kW):</p>
+        <p>{selectedCharger.powerKw}</p>
+
+        <p className="font-semibold text-gray-600">Status:</p>
+        <p
+          className={`font-medium ${
+            selectedCharger.status === "Available"
+              ? "text-green-600"
+              : selectedCharger.status === "Busy"
+              ? "text-blue-600"
+              : selectedCharger.status === "Fault"
+              ? "text-yellow-600"
+              : "text-gray-500"
+          }`}
+        >
+          {selectedCharger.status}
+        </p>
+
+        <p className="font-semibold text-gray-600">Station ID:</p>
+        <p className="truncate">{selectedCharger.stationId}</p>
+
+        <p className="font-semibold text-gray-600">Created At:</p>
+        <p>{new Date(selectedCharger.createdAt).toLocaleString()}</p>
+
+        <p className="font-semibold text-gray-600">Updated At:</p>
+        <p>{new Date(selectedCharger.updatedAt).toLocaleString()}</p>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end mt-6">
+        <button
+          onClick={() => setShowViewModal(false)}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
     </div>
   );
