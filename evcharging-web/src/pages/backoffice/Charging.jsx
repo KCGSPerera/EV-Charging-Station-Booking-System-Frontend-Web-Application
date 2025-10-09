@@ -623,11 +623,11 @@ const handleUpdateCharger = async (e) => {
         <p className="font-semibold text-gray-600">Status:</p>
         <p
           className={`font-medium ${
-            selectedCharger.status === "Available"
+            selectedCharger.status === "available"
               ? "text-green-600"
-              : selectedCharger.status === "Busy"
+              : selectedCharger.status === "busy"
               ? "text-blue-600"
-              : selectedCharger.status === "Fault"
+              : selectedCharger.status === "fault"
               ? "text-yellow-600"
               : "text-gray-500"
           }`}
