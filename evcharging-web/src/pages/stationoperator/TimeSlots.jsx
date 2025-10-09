@@ -54,6 +54,11 @@ const [newSlot, setNewSlot] = useState({
   isForWeek: false,
 });
 
+// ---------------- NEW: Cancel Confirmation Modal ----------------
+const [showCancelModal, setShowCancelModal] = useState(false);
+const [selectedSlotId, setSelectedSlotId] = useState(null);
+const [cancelReason, setCancelReason] = useState("");
+
 
   // ---------------- FETCH ALL SLOTS ----------------
   const fetchSlots = async () => {
@@ -428,14 +433,28 @@ const [newSlot, setNewSlot] = useState({
                       <FaInfoCircle /> View
                     </button>
 
-                    {slot.status !== "Cancelled" && (
+                    {/* {slot.status !== "Cancelled" && (
                       <button
                         onClick={() => handleCancel(slot.id)}
                         className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
                       >
                         <FaTimes /> Cancel
                       </button>
-                    )}
+                    )} */}
+
+                    {slot.status !== "Cancelled" && (
+  <button
+    onClick={() => {
+      setSelectedSlotId(slot.id);
+      setShowCancelModal(true);
+    }}
+    className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
+  >
+    <FaTimes /> Cancel
+  </button>
+)}
+
+
                   </div>
                 </div>
               ))}
@@ -594,6 +613,62 @@ const [newSlot, setNewSlot] = useState({
           </button>
         </div>
       </form>
+    </div>
+  </div>
+)}
+
+{/* CANCEL CONFIRMATION MODAL */}
+{showCancelModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+      <h3 className="text-xl font-semibold text-red-600 mb-4">
+        Confirm Cancellation
+      </h3>
+
+      <p className="text-gray-700 mb-3">
+        Please provide a reason for cancelling this time slot:
+      </p>
+
+      <textarea
+        value={cancelReason}
+        onChange={(e) => setCancelReason(e.target.value)}
+        placeholder="Enter cancellation reason..."
+        className="w-full border rounded p-2 h-24 mb-4"
+      ></textarea>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setShowCancelModal(false);
+            setCancelReason("");
+          }}
+          className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={async () => {
+            if (!cancelReason.trim()) {
+              toast.error("⚠️ Please enter a reason.");
+              return;
+            }
+            try {
+              await cancelTimeSlot(selectedSlotId, cancelReason);
+              toast.info("⚠️ Slot cancelled successfully.");
+              setShowCancelModal(false);
+              setCancelReason("");
+              fetchSlots();
+            } catch (error) {
+              console.error(error);
+              toast.error("❌ Failed to cancel slot.");
+            }
+          }}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          Confirm
+        </button>
+      </div>
     </div>
   </div>
 )}
