@@ -4,6 +4,7 @@
  * ============================================================
  * PURPOSE:
  *   • Allows Station Operators to view and manage their chargers.
+ *   • Displays summary of charger statuses.
  *   • Fetch chargers from assigned stations.
  *   • View charger details and update their status.
  *   • No edit or delete permissions.
@@ -116,6 +117,16 @@ export default function StationCharging() {
     }
   };
 
+  // ---------------- STATUS SUMMARY CALCULATION ----------------
+  const summary = {
+    available: chargers.filter((c) => c.status?.toLowerCase() === "available").length,
+    busy: chargers.filter((c) => c.status?.toLowerCase() === "busy").length,
+    fault: chargers.filter((c) => c.status?.toLowerCase() === "fault").length,
+    offline: chargers.filter((c) => c.status?.toLowerCase() === "offline").length,
+  };
+  const total =
+    summary.available + summary.busy + summary.fault + summary.offline;
+
   // ---------------- RENDER ----------------
   if (loading) {
     return (
@@ -132,7 +143,7 @@ export default function StationCharging() {
       </h2>
 
       {/* STATION DROPDOWN */}
-      <div className="mb-4 max-w-md">
+      <div className="mb-6 max-w-md">
         <label className="block text-gray-700 font-semibold mb-2">
           Select Station
         </label>
@@ -150,79 +161,127 @@ export default function StationCharging() {
         </select>
       </div>
 
-      {/* CHARGERS TABLE */}
-      <div className="bg-white p-6 rounded shadow overflow-x-auto">
-        <h3 className="text-lg font-semibold text-blue-700 mb-3">
-          Existing Charging Points
-        </h3>
+      {/* MAIN GRID: TABLE LEFT + SUMMARY RIGHT */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* LEFT COLUMN — TABLE */}
+        <div className="lg:col-span-2 bg-white p-6 rounded shadow overflow-x-auto">
+          <h3 className="text-lg font-semibold text-blue-700 mb-3">
+            Existing Charging Points
+          </h3>
 
-        {chargers.length === 0 ? (
-          <p className="text-gray-500 text-center">No charging points found.</p>
-        ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-blue-50 text-blue-700">
-                <th className="p-3 border-b text-left">Code</th>
-                <th className="p-3 border-b text-left">Connector Type</th>
-                <th className="p-3 border-b text-left">Power (kW)</th>
-                {/* <th className="p-3 border-b text-left">Status</th> */}
-                <th className="p-3 border-b text-center">Change Status</th>
-                <th className="p-3 border-b text-center">View</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chargers.map((charger) => (
-                <tr key={charger.id} className="hover:bg-gray-50 border-b">
-                  <td className="p-3">{charger.code}</td>
-                  <td className="p-3">{charger.connectorType}</td>
-                  <td className="p-3">{charger.powerKw}</td>
-                  {/* <td
-                    className={`p-3 font-semibold ${
-                      charger.status === "Available"
-                        ? "text-green-600"
-                        : charger.status === "Busy"
-                        ? "text-blue-600"
-                        : charger.status === "Fault"
-                        ? "text-yellow-600"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {charger.status}
-                  </td> */}
-
-                  {/* Change Status Button */}
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() =>
-                        handleChangeStatus(charger.id, charger.status)
-                      }
-                      className={`text-white px-3 py-1 rounded w-28 transition-colors ${
-                        charger.status === "available"
-                          ? "bg-green-600 hover:bg-green-700"
-                          : charger.status === "busy"
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : charger.status === "fault"
-                          ? "bg-yellow-500 hover:bg-yellow-600"
-                          : "bg-gray-600 hover:bg-gray-700"
-                      }`}
-                    >
-                      {charger.status}
-                    </button>
-                  </td>
-
-                  {/* View Button */}
-                  <td className="p-3 text-center">
-                    <FaEye
-                      onClick={() => handleViewCharger(charger.id)}
-                      className="text-blue-600 cursor-pointer hover:text-blue-800"
-                      title="View Charger"
-                    />
-                  </td>
+          {chargers.length === 0 ? (
+            <p className="text-gray-500 text-center">
+              No charging points found.
+            </p>
+          ) : (
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-blue-50 text-blue-700">
+                  <th className="p-3 border-b text-left">Code</th>
+                  <th className="p-3 border-b text-left">Connector Type</th>
+                  <th className="p-3 border-b text-left">Power (kW)</th>
+                  <th className="p-3 border-b text-center">Change Status</th>
+                  <th className="p-3 border-b text-center">View</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {chargers.map((charger) => (
+                  <tr
+                    key={charger.id}
+                    className="hover:bg-gray-50 border-b text-sm"
+                  >
+                    <td className="p-3">{charger.code}</td>
+                    <td className="p-3">{charger.connectorType}</td>
+                    <td className="p-3">{charger.powerKw}</td>
+
+                    {/* Status Button */}
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() =>
+                          handleChangeStatus(charger.id, charger.status)
+                        }
+                        className={`text-white px-3 py-1 rounded w-24 transition-colors capitalize ${
+                          charger.status?.toLowerCase() === "available"
+                            ? "bg-green-600 hover:bg-green-700"
+                            : charger.status?.toLowerCase() === "busy"
+                            ? "bg-blue-600 hover:bg-blue-700"
+                            : charger.status?.toLowerCase() === "fault"
+                            ? "bg-yellow-500 hover:bg-yellow-600"
+                            : "bg-gray-600 hover:bg-gray-700"
+                        }`}
+                      >
+                        {charger.status}
+                      </button>
+                    </td>
+
+                    {/* View Button */}
+                    <td className="p-3 text-center">
+                      <FaEye
+                        onClick={() => handleViewCharger(charger.id)}
+                        className="text-blue-600 cursor-pointer hover:text-blue-800"
+                        title="View Charger"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN — SUMMARY CARDS */}
+        {/* <div className="flex flex-col gap-4">
+            <p className="text-4xl font-semibold text-center">Chargers Summary</p>
+          <div className="bg-green-100 text-green-700 p-4 rounded shadow text-center">
+            <h4 className="text-lg font-semibold">Available</h4>
+            <p className="text-3xl font-bold">{summary.available}</p>
+          </div>
+          <div className="bg-blue-100 text-blue-700 p-4 rounded shadow text-center">
+            <h4 className="text-lg font-semibold">Busy</h4>
+            <p className="text-3xl font-bold">{summary.busy}</p>
+          </div>
+          <div className="bg-yellow-100 text-yellow-700 p-4 rounded shadow text-center">
+            <h4 className="text-lg font-semibold">Fault</h4>
+            <p className="text-3xl font-bold">{summary.fault}</p>
+          </div>
+          <div className="bg-gray-100 text-gray-700 p-4 rounded shadow text-center">
+            <h4 className="text-lg font-semibold">Offline</h4>
+            <p className="text-3xl font-bold">{summary.offline}</p>
+          </div>
+          <div className="bg-purple-100 text-purple-700 p-4 rounded shadow text-center">
+            <h4 className="text-lg font-semibold">Total</h4>
+            <p className="text-3xl font-bold">{total}</p>
+          </div>
+        </div> */}
+        <div className="flex flex-col gap-4">
+  <p className="text-3xl font-semibold text-center mb-2 ">Chargers Summary</p>
+
+  <div className="bg-green-100 text-green-700 p-4 rounded shadow flex justify-between items-center">
+    <h4 className="text-lg font-semibold ">Available</h4>
+    <p className="text-3xl font-bold">{summary.available}</p>
+  </div>
+
+  <div className="bg-blue-100 text-blue-700 p-4 rounded shadow flex justify-between items-center">
+    <h4 className="text-lg font-semibold">Busy</h4>
+    <p className="text-3xl font-bold">{summary.busy}</p>
+  </div>
+
+  <div className="bg-yellow-100 text-yellow-700 p-4 rounded shadow flex justify-between items-center">
+    <h4 className="text-lg font-semibold">Fault</h4>
+    <p className="text-3xl font-bold">{summary.fault}</p>
+  </div>
+
+  <div className="bg-gray-100 text-gray-700 p-4 rounded shadow flex justify-between items-center">
+    <h4 className="text-lg font-semibold">Offline</h4>
+    <p className="text-3xl font-bold">{summary.offline}</p>
+  </div>
+
+  <div className="bg-purple-100 text-purple-700 p-4 rounded shadow flex justify-between items-center">
+    <h4 className="text-lg font-semibold">Total</h4>
+    <p className="text-3xl font-bold">{total}</p>
+  </div>
+</div>
+
       </div>
 
       {/* STATUS CHANGE MODAL */}
@@ -269,7 +328,6 @@ export default function StationCharging() {
       {showViewModal && selectedCharger && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg relative border border-gray-200">
-            {/* Header */}
             <div className="flex justify-between items-center border-b pb-3 mb-4">
               <h3 className="text-2xl font-semibold text-blue-700">
                 ⚡ Charger Details
@@ -282,7 +340,6 @@ export default function StationCharging() {
               </button>
             </div>
 
-            {/* Charger Info */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-gray-800">
               <p className="font-semibold text-gray-600">Code:</p>
               <p>{selectedCharger.code}</p>
@@ -295,7 +352,7 @@ export default function StationCharging() {
 
               <p className="font-semibold text-gray-600">Status:</p>
               <p
-                className={`font-medium ${
+                className={`font-medium capitalize ${
                   selectedCharger.status === "available"
                     ? "text-green-600"
                     : selectedCharger.status === "busy"
@@ -318,7 +375,6 @@ export default function StationCharging() {
               <p>{new Date(selectedCharger.updatedAt).toLocaleString()}</p>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setShowViewModal(false)}
