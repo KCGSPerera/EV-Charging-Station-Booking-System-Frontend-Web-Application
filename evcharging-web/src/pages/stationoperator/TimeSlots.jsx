@@ -169,6 +169,13 @@ const [cancelReason, setCancelReason] = useState("");
     }
   };
 
+  // ---------------- NEW: View Slot Details Modal ----------------
+const [showSlotModal, setShowSlotModal] = useState(false);
+const [selectedSlot, setSelectedSlot] = useState(null);
+const [selectedStation, setSelectedStation] = useState(null);
+const [selectedCharger, setSelectedCharger] = useState(null);
+
+
   useEffect(() => {
     fetchSlots();
     fetchChargers();
@@ -422,7 +429,7 @@ const [cancelReason, setCancelReason] = useState("");
                   </div>
 
                   <div className="flex justify-between mt-3">
-                    <button
+                    {/* <button
                       onClick={() =>
                         alert(
                           `Details:\n\nStart: ${slot.start}\nEnd: ${slot.end}\nStatus: ${slot.status}`
@@ -431,7 +438,28 @@ const [cancelReason, setCancelReason] = useState("");
                       className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
                     >
                       <FaInfoCircle /> View
-                    </button>
+                    </button> */}
+
+                    <button
+  onClick={async () => {
+    try {
+      const charger = await getChargerById(slot.chargerId);
+      const stationsData = await getMyStations();
+      const station = stationsData.find((s) => s.id === slot.stationId);
+      setSelectedSlot(slot);
+      setSelectedStation(station);
+      setSelectedCharger(charger);
+      setShowSlotModal(true);
+    } catch (error) {
+      console.error(error);
+      toast.error("❌ Failed to load slot details.");
+    }
+  }}
+  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+>
+  <FaInfoCircle /> View
+</button>
+
 
                     {/* {slot.status !== "Cancelled" && (
                       <button
@@ -672,6 +700,122 @@ const [cancelReason, setCancelReason] = useState("");
     </div>
   </div>
 )}
+
+{/* VIEW SLOT DETAILS MODAL */}
+{showSlotModal && selectedSlot && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg relative border border-gray-200">
+      {/* Header */}
+      <div className="flex justify-between items-center border-b pb-3 mb-4">
+        <h3 className="text-2xl font-semibold text-blue-700">
+          ⚡ Slot Details
+        </h3>
+        <button
+          onClick={() => setShowSlotModal(false)}
+          className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Slot Info */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-gray-800">
+        {/* Station */}
+        <p className="font-semibold text-gray-600">Station:</p>
+        <p>
+          {selectedStation
+            ? `${selectedStation.code} : ${selectedStation.name}`
+            : "N/A"}
+        </p>
+
+        {/* Charger */}
+        <p className="font-semibold text-gray-600">Charger:</p>
+        <p>
+          {selectedCharger
+            ? `${selectedCharger.code} - ${selectedCharger.connectorType} (${selectedCharger.powerKw}kW)`
+            : "N/A"}
+        </p>
+
+        {/* Charger Status */}
+        <p className="font-semibold text-gray-600">Charger Status:</p>
+        <p
+          className={`font-medium ${
+            selectedCharger?.status === "available"
+              ? "text-green-600"
+              : selectedCharger?.status === "busy"
+              ? "text-blue-600"
+              : selectedCharger?.status === "fault"
+              ? "text-yellow-600"
+              : "text-gray-600"
+          }`}
+        >
+          {selectedCharger?.status || "N/A"}
+        </p>
+
+        {/* Date */}
+        <p className="font-semibold text-gray-600">Date:</p>
+        <p>{new Date(selectedSlot.date).toLocaleDateString()}</p>
+
+        {/* Start Time */}
+        <p className="font-semibold text-gray-600">Start Time:</p>
+        <p>
+          {new Date(selectedSlot.start).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+
+        {/* End Time */}
+        <p className="font-semibold text-gray-600">End Time:</p>
+        <p>
+          {new Date(selectedSlot.end).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+
+        {/* Status */}
+        <p className="font-semibold text-gray-600">Slot Status:</p>
+        <p
+          className={`font-medium ${
+            selectedSlot.status === "available"
+              ? "text-green-600"
+              : selectedSlot.status === "busy"
+              ? "text-blue-600"
+              : selectedSlot.status === "cancelled"
+              ? "text-red-600"
+              : "text-gray-600"
+          }`}
+        >
+          {selectedSlot.status}
+        </p>
+
+        {/* Cancel Reason (if exists) */}
+        {selectedSlot.cancelReason && (
+          <>
+            <p className="font-semibold text-gray-600">Cancel Reason:</p>
+            <p className="text-red-700 italic">{selectedSlot.cancelReason}</p>
+          </>
+        )}
+
+        {/* Created By */}
+        <p className="font-semibold text-gray-600">Created By:</p>
+        <p>{selectedSlot.createdBy || "N/A"}</p>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end mt-6">
+        <button
+          onClick={() => setShowSlotModal(false)}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
     </div>
   );
