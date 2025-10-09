@@ -18,6 +18,7 @@ import {
   getChargersByStation,
   createCharger,
   getChargerById,
+  updateCharger,
   updateChargerStatus,
   deleteCharger,
 } from "../../api/chargersApi";
@@ -48,6 +49,17 @@ export default function Charging() {
     // ---------------- VIEW CHARGER MODAL ----------------
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedCharger, setSelectedCharger] = useState(null);
+
+  // ---------------- EDIT CHARGER MODAL ----------------
+const [showEditModal, setShowEditModal] = useState(false);
+const [editCharger, setEditCharger] = useState({
+  id: "",
+  stationId: "",
+  code: "",
+  connectorType: "",
+  powerKw: "",
+  status: "",
+});
 
 
   // ---------------- FETCH ALL STATIONS ----------------
@@ -208,6 +220,40 @@ export default function Charging() {
     }
   };
 
+  // ---------------- OPEN EDIT MODAL ----------------
+const handleEditCharger = (charger) => {
+  setEditCharger({
+    id: charger.id,
+    stationId: charger.stationId,
+    code: charger.code,
+    connectorType: charger.connectorType,
+    powerKw: charger.powerKw,
+    status: charger.status,
+  });
+  setShowEditModal(true);
+};
+
+// ---------------- SAVE CHANGES ----------------
+const handleUpdateCharger = async (e) => {
+  e.preventDefault();
+  try {
+    const payload = {
+      code: editCharger.code,
+      connectorType: editCharger.connectorType,
+      powerKw: Number(editCharger.powerKw),
+      status: editCharger.status,
+    };
+    await updateCharger(editCharger.id, payload);
+    toast.success("✅ Charger updated successfully!");
+    setShowEditModal(false);
+    fetchStations();
+  } catch (error) {
+    console.error(error);
+    toast.error("❌ Failed to update charger.");
+  }
+};
+
+
 
   // ---------------- RENDER ----------------
   return (
@@ -319,10 +365,17 @@ export default function Charging() {
   title="View"
 />
 
-                    <FaEdit
+                    {/* <FaEdit
                       className="text-green-600 cursor-pointer hover:text-green-800"
                       title="Edit"
-                    />
+                    /> */}
+
+                    <FaEdit
+  onClick={() => handleEditCharger(c)}
+  className="text-green-600 cursor-pointer hover:text-green-800"
+  title="Edit"
+/>
+
                     <FaTrash
                       onClick={() => handleDelete(c.id)}
                       className="text-red-600 cursor-pointer hover:text-red-800"
@@ -601,6 +654,120 @@ export default function Charging() {
           Close
         </button>
       </div>
+    </div>
+  </div>
+)}
+
+
+{/* EDIT CHARGER MODAL */}
+{showEditModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg border border-gray-200">
+      <h3 className="text-2xl font-semibold text-blue-700 mb-4">
+        ✏️ Edit Charger
+      </h3>
+
+      <form onSubmit={handleUpdateCharger} className="space-y-4">
+        {/* Station ID */}
+        <div>
+          <label className="block text-gray-700 mb-1 font-medium">
+            Station ID
+          </label>
+          <input
+            type="text"
+            value={editCharger.stationId}
+            readOnly
+            className="w-full border rounded p-2 bg-gray-100 text-gray-600"
+          />
+        </div>
+
+        {/* Charger Code */}
+        <div>
+          <label className="block text-gray-700 mb-1 font-medium">Code</label>
+          <input
+            type="text"
+            value={editCharger.code}
+            readOnly
+            className="w-full border rounded p-2 bg-gray-100 text-gray-600"
+          />
+        </div>
+
+        {/* Connector Type */}
+        <div>
+          <label className="block text-gray-700 mb-1 font-medium">
+            Connector Type
+          </label>
+          <input
+            type="text"
+            value={editCharger.connectorType}
+            onChange={(e) =>
+              setEditCharger((prev) => ({
+                ...prev,
+                connectorType: e.target.value,
+              }))
+            }
+            required
+            className="w-full border rounded p-2"
+          />
+        </div>
+
+        {/* Power (kW) */}
+        <div>
+          <label className="block text-gray-700 mb-1 font-medium">
+            Power (kW)
+          </label>
+          <input
+            type="number"
+            min="1"
+            value={editCharger.powerKw}
+            onChange={(e) =>
+              setEditCharger((prev) => ({
+                ...prev,
+                powerKw: e.target.value,
+              }))
+            }
+            required
+            className="w-full border rounded p-2"
+          />
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="block text-gray-700 mb-1 font-medium">Status</label>
+          <select
+            value={editCharger.status}
+            onChange={(e) =>
+              setEditCharger((prev) => ({
+                ...prev,
+                status: e.target.value,
+              }))
+            }
+            className="w-full border rounded p-2"
+          >
+            <option value="Available">Available</option>
+            <option value="Busy">Busy</option>
+            <option value="Fault">Fault</option>
+            <option value="Offline">Offline</option>
+          </select>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            type="button"
+            onClick={() => setShowEditModal(false)}
+            className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 )}
