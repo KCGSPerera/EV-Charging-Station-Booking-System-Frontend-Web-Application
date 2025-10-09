@@ -14,6 +14,7 @@ import Operators from "./Operators";
 import Owners from "./Owners";
 import Stations from "./Stations";
 import Bookings from "./Bookings";
+import Charging from "./Charging";
 
 export default function BackofficeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -38,6 +39,8 @@ export default function BackofficeDashboard() {
         return <Operators />;
       case "bookings":
         return <Bookings />;
+      case "charging":
+        return <Charging />;
       default:
         return (
           <div className="p-6">
@@ -129,6 +132,15 @@ export default function BackofficeDashboard() {
               onClick={() => setActiveTab("bookings")}
             >
               <FaClipboardList /> Bookings
+            </li>
+
+            <li
+              className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
+                activeTab === "bookings" && "bg-blue-800"
+              }`}
+              onClick={() => setActiveTab("charging")}
+            >
+              <FaClipboardList /> Charging
             </li>
           </ul>
         </nav>

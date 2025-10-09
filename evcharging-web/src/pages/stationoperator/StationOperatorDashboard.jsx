@@ -15,7 +15,8 @@ import StationDetails from "./StationDetails";
 import StationBookings from "./StationBookings";
 import StationOwners from "./StationOwners";
 import StationProfile from "./StationProfile";
-import StationCharging from "./StationCharging"; // ✅ new import
+import StationCharging from "./StationCharging"; 
+import TimeSlots from "./TimeSlots";
 
 export default function StationOperatorDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -39,6 +40,8 @@ export default function StationOperatorDashboard() {
         return <StationProfile />;
       case "charging":
         return <StationCharging />;
+      case "timeslots":
+        return <TimeSlots />;
       default:
         return (
           <div className="p-6">
@@ -120,6 +123,15 @@ export default function StationOperatorDashboard() {
               onClick={() => setActiveTab("owners")}
             >
               <FaUsers /> EV Owners
+            </li>
+
+            <li
+              className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
+                activeTab === "timeslots" && "bg-blue-800"
+              }`}
+              onClick={() => setActiveTab("timeslots")}
+            >
+              <FaUsers /> Time Slots
             </li>
 
             <li
