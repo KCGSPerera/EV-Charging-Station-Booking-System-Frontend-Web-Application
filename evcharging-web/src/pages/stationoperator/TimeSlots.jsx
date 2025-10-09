@@ -1,153 +1,3 @@
-// /**
-//  * ============================================================
-//  * ✅ TimeSlots.jsx — Card-Based Operator View
-//  * ============================================================
-//  * PURPOSE:
-//  *   • Group slots by date and show them as cards.
-//  *   • Provide easy access to view, cancel, and manage availability.
-//  * ============================================================
-//  */
-
-// import { useEffect, useState } from "react";
-// import { toast } from "react-toastify";
-// import {
-//   createTimeSlots,
-//   getAllTimeSlots,
-//   cancelTimeSlot,
-// } from "../../api/stationOperatorTimeSlotsApi";
-// import { FaCalendarAlt, FaClock, FaTimes, FaInfoCircle } from "react-icons/fa";
-
-// export default function TimeSlots() {
-//   const [timeSlots, setTimeSlots] = useState([]);
-//   const [groupedSlots, setGroupedSlots] = useState({});
-//   const [loading, setLoading] = useState(true);
-
-//   const fetchSlots = async () => {
-//     try {
-//       setLoading(true);
-//       const data = await getAllTimeSlots();
-//       const grouped = data.reduce((acc, slot) => {
-//         const date = slot.date.split("T")[0];
-//         if (!acc[date]) acc[date] = [];
-//         acc[date].push(slot);
-//         return acc;
-//       }, {});
-//       setGroupedSlots(grouped);
-//     } catch (error) {
-//       console.error(error);
-//       toast.error("❌ Failed to fetch time slots.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleCancel = async (slotId) => {
-//     const reason = prompt("Enter cancellation reason:");
-//     if (!reason) return;
-//     try {
-//       await cancelTimeSlot(slotId, reason );
-//       toast.info("⚠️ Slot cancelled successfully.");
-//       fetchSlots();
-//     } catch {
-//       toast.error("❌ Failed to cancel slot.");
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchSlots();
-//   }, []);
-
-//   if (loading)
-//     return <div className="p-6 text-center text-gray-500">Loading slots...</div>;
-
-//   return (
-//     <div className="p-6">
-//       <h2 className="text-2xl font-bold text-blue-700 mb-4">
-//         Scheduled Time Slots
-//       </h2>
-
-//       {Object.keys(groupedSlots).length === 0 ? (
-//         <p className="text-center text-gray-500">No time slots available.</p>
-//       ) : (
-//         Object.entries(groupedSlots).map(([date, slots]) => (
-//           <div key={date} className="mb-8">
-//             <div className="flex items-center gap-2 mb-3">
-//               <FaCalendarAlt className="text-blue-600" />
-//               <h3 className="text-xl font-semibold text-blue-700">
-//                 {new Date(date).toDateString()}
-//               </h3>
-//             </div>
-
-//             <div className="grid md:grid-cols-3 gap-4">
-//               {slots.map((slot) => (
-//                 <div
-//                   key={slot.id}
-//                   className={`p-4 rounded-lg shadow border ${
-//                     slot.status === "Available"
-//                       ? "border-green-400 bg-green-50"
-//                       : slot.status === "Busy"
-//                       ? "border-blue-400 bg-blue-50"
-//                       : slot.status === "Cancelled"
-//                       ? "border-red-400 bg-red-50"
-//                       : "border-gray-300 bg-gray-50"
-//                   }`}
-//                 >
-//                   <div className="flex justify-between items-center mb-2">
-//                     <h4 className="font-semibold text-gray-700 flex items-center gap-1">
-//                       <FaClock />{" "}
-//                       {`${new Date(slot.start).toLocaleTimeString([], {
-//                         hour: "2-digit",
-//                         minute: "2-digit",
-//                       })} - ${new Date(slot.end).toLocaleTimeString([], {
-//                         hour: "2-digit",
-//                         minute: "2-digit",
-//                       })}`}
-//                     </h4>
-//                     <span
-//                       className={`text-sm font-semibold px-2 py-1 rounded ${
-//                         slot.status === "Available"
-//                           ? "bg-green-200 text-green-800"
-//                           : slot.status === "Busy"
-//                           ? "bg-blue-200 text-blue-800"
-//                           : slot.status === "Cancelled"
-//                           ? "bg-red-200 text-red-800"
-//                           : "bg-gray-200 text-gray-700"
-//                       }`}
-//                     >
-//                       {slot.status}
-//                     </span>
-//                   </div>
-
-//                   <div className="flex justify-between mt-3">
-//                     <button
-//                       onClick={() =>
-//                         alert(`Details:\n\nStart: ${slot.start}\nEnd: ${slot.end}`)
-//                       }
-//                       className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-//                     >
-//                       <FaInfoCircle /> View
-//                     </button>
-
-//                     {slot.status !== "Cancelled" && (
-//                       <button
-//                         onClick={() => handleCancel(slot.id)}
-//                         className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
-//                       >
-//                         <FaTimes /> Cancel
-//                       </button>
-//                     )}
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         ))
-//       )}
-//     </div>
-//   );
-// }
-
-
 /**
  * ============================================================
  * ✅ TimeSlots.jsx — Card-Based Operator View (Enhanced)
@@ -192,6 +42,18 @@ export default function TimeSlots() {
   // ---------------- Options ----------------
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
   const minutes = ["00", "15", "30", "45"];
+
+  // ---------------- NEW: Create Time Slot Modal ----------------
+const [showCreateModal, setShowCreateModal] = useState(false);
+const [newSlot, setNewSlot] = useState({
+  stationId: "",
+  chargerId: "",
+  date: "",
+  startTime: "",
+  endTime: "",
+  isForWeek: false,
+});
+
 
   // ---------------- FETCH ALL SLOTS ----------------
   const fetchSlots = async () => {
@@ -313,9 +175,21 @@ export default function TimeSlots() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-blue-700 mb-4">
+      {/* <h2 className="text-2xl font-bold text-blue-700 mb-4">
         Scheduled Time Slots
-      </h2>
+      </h2> */}
+
+      {/* Header Row with Create Button */}
+<div className="flex justify-between items-center mb-4">
+  <h2 className="text-2xl font-bold text-blue-700">Scheduled Time Slots</h2>
+  <button
+    onClick={() => setShowCreateModal(true)}
+    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+  >
+    ➕ Create Time Slot
+  </button>
+</div>
+
 
       {/* ---------------- FILTER SECTION ---------------- */}
       <div className="bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-4 items-end">
@@ -569,6 +443,161 @@ export default function TimeSlots() {
           </div>
         ))
       )}
+
+      {/* CREATE TIME SLOT MODAL */}
+{showCreateModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+      <h3 className="text-xl font-semibold text-blue-700 mb-4">
+        Create New Time Slot
+      </h3>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          try {
+            if (
+              !newSlot.stationId ||
+              !newSlot.chargerId ||
+              !newSlot.date ||
+              !newSlot.startTime ||
+              !newSlot.endTime
+            ) {
+              toast.error("⚠️ Please fill all required fields.");
+              return;
+            }
+
+            await createTimeSlots(newSlot);
+            toast.success("✅ Time slot(s) created successfully!");
+            setShowCreateModal(false);
+            setNewSlot({
+              stationId: "",
+              chargerId: "",
+              date: "",
+              startTime: "",
+              endTime: "",
+              isForWeek: false,
+            });
+            fetchSlots();
+          } catch (error) {
+            console.error(error);
+            toast.error("❌ Failed to create time slot.");
+          }
+        }}
+      >
+        {/* Station Selector */}
+        <div className="mb-3">
+          <label className="block text-gray-700 mb-1">Select Station</label>
+          <select
+            value={newSlot.stationId}
+            onChange={(e) =>
+              setNewSlot({ ...newSlot, stationId: e.target.value })
+            }
+            className="w-full border rounded p-2"
+            required
+          >
+            <option value="">Select Station</option>
+            {stations.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.code} : {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Charger Selector */}
+        <div className="mb-3">
+          <label className="block text-gray-700 mb-1">Select Charger</label>
+          <select
+            value={newSlot.chargerId}
+            onChange={(e) =>
+              setNewSlot({ ...newSlot, chargerId: e.target.value })
+            }
+            className="w-full border rounded p-2"
+            required
+          >
+            <option value="">Select Charger</option>
+            {chargers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.code} - {c.connectorType} ({c.powerKw}kW)
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Date */}
+        <div className="mb-3">
+          <label className="block text-gray-700 mb-1">Date</label>
+          <input
+            type="date"
+            value={newSlot.date}
+            onChange={(e) => setNewSlot({ ...newSlot, date: e.target.value })}
+            className="w-full border rounded p-2"
+            required
+          />
+        </div>
+
+        {/* Start & End Time */}
+        <div className="flex gap-4 mb-3">
+          <div className="flex-1">
+            <label className="block text-gray-700 mb-1">Start Time</label>
+            <input
+              type="time"
+              value={newSlot.startTime}
+              onChange={(e) =>
+                setNewSlot({ ...newSlot, startTime: e.target.value })
+              }
+              className="w-full border rounded p-2"
+              required
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-gray-700 mb-1">End Time</label>
+            <input
+              type="time"
+              value={newSlot.endTime}
+              onChange={(e) =>
+                setNewSlot({ ...newSlot, endTime: e.target.value })
+              }
+              className="w-full border rounded p-2"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Is For Week Checkbox */}
+        <div className="mb-4 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={newSlot.isForWeek}
+            onChange={(e) =>
+              setNewSlot({ ...newSlot, isForWeek: e.target.checked })
+            }
+          />
+          <label className="text-gray-700">Apply for the whole week</label>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(false)}
+            className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Create
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
