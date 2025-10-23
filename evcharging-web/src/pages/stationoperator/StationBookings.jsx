@@ -237,11 +237,50 @@ import {
   regenerateReservationQr,
 } from "../../api/stationOperatorReservations";
 
+import { getChargerById } from "../../api/chargersApi";
+
+import { FiCheckCircle } from "react-icons/fi";
+import { FiRefreshCw } from "react-icons/fi";
+import { MdQrCode2 } from "react-icons/md";
+
+
+// Toggle used to approve a reservation (clicking approves)
+function ApproveToggle({ status, onApprove }) {
+  const isApproved = status?.toLowerCase() === "approved";
+
+
+
+  if (isApproved) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 text-green-600 font-semibold"
+        title="Already approved"
+      >
+        <FiCheckCircle className="text-lg" />
+        Approved
+      </span>
+    );
+  }
+
+  // Not approved yet -> show a toggle button that triggers approval
+  return (
+    <button
+      onClick={onApprove}
+      className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 hover:bg-gray-400 transition"
+      title="Approve reservation"
+    >
+      <span className="sr-only">Approve</span>
+      <span className="inline-block h-5 w-5 transform rounded-full bg-white translate-x-1 transition" />
+    </button>
+  );
+}
+
 export default function StationBookings() {
   const { user } = useAuth(); // ✅ contains token & operator details
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all | pending | approved | completed
+const [chargerNames, setChargerNames] = useState({}); 
 
   // ---------------- FETCH BOOKINGS ----------------
   const fetchBookings = async () => {
@@ -255,6 +294,24 @@ export default function StationBookings() {
 
       const data = await getMyReservations();
       setBookings(data);
+      // ✅ Fetch charger names for each unique chargerId
+// const uniqueChargerIds = [...new Set(data.map((b) => b.chargerId))];
+const uniqueChargerIds = [...new Set(data.map((b) => b.chargerId).filter(Boolean))];
+
+
+const chargerMap = {};
+for (const id of uniqueChargerIds) {
+  try {
+    const charger = await getChargerById(id);
+    chargerMap[id] = charger?.code || "Unknown Charger";
+  } catch {
+    chargerMap[id] = "Unknown Charger";
+  }
+}
+
+setChargerNames(chargerMap);
+
+
     } catch (err) {
       console.error("❌ Fetch Error:", err);
       toast.error("❌ Failed to load reservations.");
@@ -343,10 +400,10 @@ export default function StationBookings() {
           <table className="min-w-full border border-gray-200">
             <thead className="bg-blue-50">
               <tr className="text-left text-blue-700 font-semibold">
-                <th className="p-3 border-b">Reservation ID</th>
+                {/* <th className="p-3 border-b">Reservation ID</th> */}
                 <th className="p-3 border-b">EV Owner NIC</th>
                 <th className="p-3 border-b">Vehicle</th>
-                <th className="p-3 border-b">Station</th>
+                {/* <th className="p-3 border-b">Station</th> */}
                 <th className="p-3 border-b">Charger</th>
                 <th className="p-3 border-b">Connector</th>
                 <th className="p-3 border-b">Start</th>
@@ -359,15 +416,22 @@ export default function StationBookings() {
             <tbody>
               {filteredBookings.map((b) => (
                 <tr key={b.id} className="hover:bg-gray-50 text-sm">
-                  <td className="p-3 border-b">{b.id}</td>
+                  {/* <td className="p-3 border-b">{b.id}</td> */}
                   <td className="p-3 border-b">{b.ownerNic}</td>
                   <td className="p-3 border-b">
                     {b.vehicle
                       ? `${b.vehicle.make} ${b.vehicle.model} (${b.vehicle.plate})`
                       : "—"}
                   </td>
-                  <td className="p-3 border-b">{b.stationId}</td>
-                  <td className="p-3 border-b">{b.chargerId}</td>
+                  {/* <td className="p-3 border-b">{b.stationId}</td> */}
+                  {/* <td className="p-3 border-b">{b.chargerId}</td> */}
+                  {/* <td className="p-3 border-b">{chargerNames[b.code] || "Loading..."}</td> */}
+                  {/* <td className="p-3 border-b">{chargerNames[b.chargerId] || "Loading..."}</td> */}
+
+<td className="p-3 border-b">
+  {b.chargerId ? (chargerNames[b.chargerId] ?? "Loading...") : "—"}
+</td>
+
                   <td className="p-3 border-b">
                     {b.vehicle?.connectorType || "—"}
                   </td>
@@ -379,13 +443,13 @@ export default function StationBookings() {
                   </td>
                   <td
                     className={`p-3 border-b font-semibold ${
-                      b.status === "Pending"
+                      b.status === "PENDING"
                         ? "text-yellow-600"
-                        : b.status === "Approved"
+                        : b.status === "APPROVED"
                         ? "text-green-600"
-                        : b.status === "Completed"
+                        : b.status === "COMPLETED"
                         ? "text-blue-600"
-                        : b.status === "Cancelled"
+                        : b.status === "CANCELLED"
                         ? "text-red-600"
                         : "text-gray-600"
                     }`}
@@ -394,8 +458,8 @@ export default function StationBookings() {
                   </td>
 
                   {/* ACTION BUTTONS */}
-                  <td className="p-3 border-b text-center">
-                    {b.status === "Pending" ? (
+                  {/* <td className="p-3 border-b text-center">
+                    {b.status === "pending" ? (
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => handleApprove(b.id)}
@@ -404,7 +468,7 @@ export default function StationBookings() {
                           Approve
                         </button>
                       </div>
-                    ) : b.status === "Approved" ? (
+                    ) : b.status === "approved" ? (
                       <button
                         onClick={() => handleRegenerateQr(b.id)}
                         className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
@@ -414,7 +478,33 @@ export default function StationBookings() {
                     ) : (
                       <span className="text-gray-400">—</span>
                     )}
-                  </td>
+                  </td> */}
+
+                  <td className="p-3 border-b">
+  <div className="flex items-center justify-center gap-3">
+    {/* Toggle to approve when Pending */}
+    {b.status === "PENDING" && (
+      <ApproveToggle status={b.status} onApprove={() => handleApprove(b.id)} />
+    )}
+
+    {/* Regenerate QR when Approved */}
+    {b.status === "APPROVED" && (
+      <button
+        onClick={() => handleRegenerateQr(b.id)}
+        className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
+        title="Regenerate QR"
+      >
+        <MdQrCode2 className="text-xl" />
+      </button>
+    )}
+
+    {/* Fallback dash when neither action is applicable */}
+    {!(b.status === "PENDING" || b.status === "APPROVED") && (
+      <span className="text-gray-400">—</span>
+    )}
+  </div>
+</td>
+
                 </tr>
               ))}
             </tbody>
