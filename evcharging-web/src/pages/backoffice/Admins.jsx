@@ -94,7 +94,11 @@ export default function Admins() {
   const handleUpdateAdmin = async (e) => {
     e.preventDefault();
     try {
-      await updateAdmin(selectedAdmin.id, formData);
+      const payload = { ...formData };
+      // ✅ If password left blank, do not send it in the update
+      if (!payload.password) delete payload.password;
+
+      await updateAdmin(selectedAdmin.id, payload);
       toast.success("Admin updated successfully!");
       setShowEditModal(false);
       fetchAdmins();
@@ -245,20 +249,25 @@ function AdminModal({ title, onClose, onSubmit, formData, setFormData, isEdit })
             />
           </div>
 
-          {!isEdit && (
-            <div>
-              <label className="block font-semibold">Password</label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-          )}
+          {/* ✅ Password field now appears in both Add & Edit modes */}
+          <div>
+            <label className="block font-semibold">Password</label>
+            <input
+              type="password"
+              placeholder={isEdit ? "Leave blank to keep current password" : ""}
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              className="w-full p-2 border rounded"
+              required={!isEdit} // required only for Add mode
+            />
+            {isEdit && (
+              <p className="text-xs text-gray-500 mt-1">
+                Leave blank if you don’t want to change the password.
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="block font-semibold">Role</label>
