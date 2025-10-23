@@ -45,10 +45,39 @@ export async function createTimeSlots(timeSlotData) {
 // 🔹 Get All Time Slots
 // -----------------------------
 // Response: Array of time slot objects
-export async function getAllTimeSlots() {
+export async function getAllTimeSlots1() {
   const response = await axios.get(API_BASE_URL, authHeader());
   return response.data;
 }
+
+export async function getAllTimeSlots(params = {}) {
+  const {
+    skip = 0,
+    take = 50,
+    stationId,
+    chargerId,
+    date,
+    status,
+  } = params;
+
+  const config = {
+    ...authHeader(),          // keeps Authorization header
+    params: {
+      skip,
+      take,
+    },
+  };
+
+  // only send filters when provided
+  if (stationId) config.params.stationId = stationId;
+  if (chargerId) config.params.chargerId = chargerId;
+  if (date)      config.params.date = date;       // yyyy-MM-dd
+  if (status && status !== "all") config.params.status = status;
+
+  const response = await axios.get(API_BASE_URL, config);
+  return response.data;
+}
+
 
 // -----------------------------
 // 🔹 Cancel a Time Slot

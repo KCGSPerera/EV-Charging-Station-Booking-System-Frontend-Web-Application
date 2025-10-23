@@ -61,7 +61,7 @@ const [cancelReason, setCancelReason] = useState("");
 
 
   // ---------------- FETCH ALL SLOTS ----------------
-  const fetchSlots = async () => {
+  const fetchSlots1 = async () => {
     try {
       setLoading(true);
       const data = await getAllTimeSlots();
@@ -80,6 +80,65 @@ const [cancelReason, setCancelReason] = useState("");
       setLoading(false);
     }
   };
+
+  const fetchSlots2 = async () => {
+  try {
+    setLoading(true);
+
+    // ask for a larger page; adjust if your API supports params
+    const data = await getAllTimeSlots({ take: 1000 });
+
+    // group by YYYY-MM-DD derived from start
+    const grouped = data.reduce((acc, slot) => {
+      const dateKey = new Date(slot.start).toISOString().slice(0, 10);
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(slot);
+      return acc;
+    }, {});
+    setGroupedSlots(grouped);
+    setTimeSlots(data);
+  } catch (error) {
+    console.error(error);
+    toast.error("❌ Failed to fetch time slots.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const fetchSlots = async () => {
+  try {
+    setLoading(true);
+    const pageSize = 50; // backend default limit
+    let skip = 0;
+    let allSlots = [];
+
+    while (true) {
+      const batch = await getAllTimeSlots({ skip, take: pageSize });
+      if (!batch || batch.length === 0) break;
+      allSlots = [...allSlots, ...batch];
+
+      if (batch.length < pageSize) break; // last page reached
+      skip += pageSize;
+    }
+
+    // group by date derived from slot.start
+    const grouped = allSlots.reduce((acc, slot) => {
+      const dateKey = new Date(slot.start).toISOString().slice(0, 10);
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(slot);
+      return acc;
+    }, {});
+
+    setGroupedSlots(grouped);
+    setTimeSlots(allSlots);
+  } catch (error) {
+    console.error(error);
+    toast.error("❌ Failed to fetch all time slots.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // ---------------- FETCH STATIONS + CHARGERS ----------------
   const fetchChargers = async () => {
@@ -102,8 +161,14 @@ const [cancelReason, setCancelReason] = useState("");
       let filtered = [...timeSlots];
 
       // Date filter
-      if (filters.date)
-        filtered = filtered.filter((slot) => slot.date.startsWith(filters.date));
+      // if (filters.date)
+      //   filtered = filtered.filter((slot) => slot.date.startsWith(filters.date));
+      // Date filter (YYYY-MM-DD) using start
+if (filters.date) {
+  filtered = filtered.filter((slot) =>
+    new Date(slot.start).toISOString().startsWith(filters.date)
+  );
+}
 
       // Convert start/end time to minutes since midnight
       const startTotalMins =
@@ -143,13 +208,22 @@ const [cancelReason, setCancelReason] = useState("");
         );
 
       // Regroup filtered data
-      const grouped = filtered.reduce((acc, slot) => {
-        const date = slot.date.split("T")[0];
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(slot);
-        return acc;
-      }, {});
-      setGroupedSlots(grouped);
+      // const grouped = filtered.reduce((acc, slot) => {
+      //   const date = slot.date.split("T")[0];
+      //   if (!acc[date]) acc[date] = [];
+      //   acc[date].push(slot);
+      //   return acc;
+      // }, {});
+      // setGroupedSlots(grouped);
+      
+      // Regroup filtered data by date derived from start
+const grouped = filtered.reduce((acc, slot) => {
+  const dateKey = new Date(slot.start).toISOString().slice(0, 10);
+  if (!acc[dateKey]) acc[dateKey] = [];
+  acc[dateKey].push(slot);
+  return acc;
+}, {});
+setGroupedSlots(grouped);
     } catch (error) {
       console.error(error);
       toast.error("❌ Failed to filter slots.");
@@ -392,15 +466,15 @@ const [selectedCharger, setSelectedCharger] = useState(null);
               {slots.map((slot) => (
                 <div
                   key={slot.id}
-                  className={`p-4 rounded-lg shadow border ${
-                    slot.status === "Available"
-                      ? "border-green-400 bg-green-50"
-                      : slot.status === "Busy"
-                      ? "border-blue-400 bg-blue-50"
-                      : slot.status === "Cancelled"
-                      ? "border-red-400 bg-red-50"
-                      : "border-gray-300 bg-gray-50"
-                  }`}
+                  // className={`p-4 rounded-lg shadow border ${
+                  //   slot.status === "Available"
+                  //     ? "border-green-400 bg-green-50"
+                  //     : slot.status === "Busy"
+                  //     ? "border-blue-400 bg-blue-50"
+                  //     : slot.status === "Cancelled"
+                  //     ? "border-red-400 bg-red-50"
+                  //     : "border-gray-300 bg-gray-50"
+                  // }`}
                 >
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="font-semibold text-gray-700 flex items-center gap-1">
@@ -754,7 +828,8 @@ const [selectedCharger, setSelectedCharger] = useState(null);
 
         {/* Date */}
         <p className="font-semibold text-gray-600">Date:</p>
-        <p>{new Date(selectedSlot.date).toLocaleDateString()}</p>
+        {/* <p>{new Date(selectedSlot.date).toLocaleDateString()}</p> */}
+        <p>{new Date(selectedSlot.start).toLocaleDateString()}</p>
 
         {/* Start Time */}
         <p className="font-semibold text-gray-600">Start Time:</p>

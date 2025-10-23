@@ -242,6 +242,9 @@ import { getChargerById } from "../../api/chargersApi";
 import { FiCheckCircle } from "react-icons/fi";
 import { FiRefreshCw } from "react-icons/fi";
 import { MdQrCode2 } from "react-icons/md";
+import { MdEdit } from "react-icons/md";
+import { IoQrCodeOutline } from "react-icons/io5"; // For popup display
+
 
 
 // Toggle used to approve a reservation (clicking approves)
@@ -280,7 +283,9 @@ export default function StationBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all | pending | approved | completed
-const [chargerNames, setChargerNames] = useState({}); 
+  const [chargerNames, setChargerNames] = useState({}); 
+  const [qrPopup, setQrPopup] = useState({ visible: false, qrData: "" });
+
 
   // ---------------- FETCH BOOKINGS ----------------
   const fetchBookings = async () => {
@@ -326,7 +331,7 @@ setChargerNames(chargerMap);
   }, []);
 
   // ---------------- APPROVE RESERVATION ----------------
-  const handleApprove = async (id) => {
+  const handleApprove1 = async (id) => {
     try {
       await approveReservation(id);
       toast.success("✅ Reservation approved successfully!");
@@ -336,6 +341,48 @@ setChargerNames(chargerMap);
       toast.error("❌ Failed to approve reservation.");
     }
   };
+
+  // ---------------- APPROVE RESERVATION + GENERATE QR ----------------
+const handleApprove2 = async (id) => {
+  try {
+    await approveReservation(id);
+    const qrRes = await regenerateReservationQr(id); // ✅ Generate QR after approval
+    toast.success("✅ Reservation approved and QR generated!");
+    setQrPopup({ visible: true, qrData: qrRes.qrCode }); // show popup
+    fetchBookings();
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ Failed to approve or generate QR.");
+  }
+};
+
+// ---------------- APPROVE RESERVATION + GENERATE QR ----------------
+const handleApprove = async (id) => {
+  try {
+    await approveReservation(id);
+
+    // ✅ Generate QR after approval
+    const res = await regenerateReservationQr(id);
+
+    // Extract Base64 image string from the API response
+    const qrImage = res.qr?.imageBase64
+      ? `data:${res.qr.imageContentType};base64,${res.qr.imageBase64}`
+      : null;
+
+    if (qrImage) {
+      setQrPopup({ visible: true, qrData: qrImage });
+      toast.success("✅ Reservation approved and QR generated!");
+    } else {
+      toast.warning("⚠️ QR generated, but no image returned.");
+    }
+
+    fetchBookings();
+  } catch (err) {
+    console.error("❌ Approve + QR Error:", err);
+    toast.error("❌ Failed to approve or generate QR.");
+  }
+};
+
 
   // ---------------- REGENERATE QR CODE ----------------
   const handleRegenerateQr = async (id) => {
@@ -480,22 +527,72 @@ setChargerNames(chargerMap);
                     )}
                   </td> */}
 
-                  <td className="p-3 border-b">
+                 <td className="p-3 border-b">
   <div className="flex items-center justify-center gap-3">
     {/* Toggle to approve when Pending */}
     {b.status === "PENDING" && (
       <ApproveToggle status={b.status} onApprove={() => handleApprove(b.id)} />
     )}
 
-    {/* Regenerate QR when Approved */}
+    {/* When Approved — show View QR, Regenerate, and Edit */}
     {b.status === "APPROVED" && (
-      <button
-        onClick={() => handleRegenerateQr(b.id)}
-        className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
-        title="Regenerate QR"
-      >
-        <MdQrCode2 className="text-xl" />
-      </button>
+      <>
+        {/* ✅ View QR button */}
+        {/* <button
+          onClick={() => {
+            const qrImage = b.qr?.imageBase64
+              ? `data:${b.qr.imageContentType};base64,${b.qr.imageBase64}`
+              : null;
+            if (qrImage) {
+              setQrPopup({ visible: true, qrData: qrImage });
+            } else {
+              toast.warning("⚠️ No QR image available for this reservation.");
+            }
+          }}
+          className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
+          title="View QR"
+        >
+          <IoQrCodeOutline className="text-xl" />
+        </button> */}
+
+        {/* ✅ View QR button */}
+<button
+  onClick={() => {
+    const qrImage = b.qr?.imageBase64
+      ? `data:${b.qr.imageContentType || "image/png"};base64,${b.qr.imageBase64}`
+      : null;
+
+    if (qrImage) {
+      setQrPopup({ visible: true, qrData: qrImage }); // ✅ open popup with image
+    } else {
+      toast.warning("⚠️ QR image not available for this reservation.");
+    }
+  }}
+  className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
+  title="View QR"
+>
+  <IoQrCodeOutline className="text-xl" />
+</button>
+
+
+        {/* 🔄 Regenerate QR */}
+        {/* <button
+          onClick={() => handleRegenerateQr(b.id)}
+          className="p-2 rounded-full bg-green-50 hover:bg-green-100 text-green-700"
+          title="Regenerate QR"
+        >
+          <MdQrCode2 className="text-xl" />
+        </button> */}
+
+        {/* ✏️ Edit reservation */}
+        <button
+          onClick={() => toast.info("🛠 Edit functionality coming soon!")}
+          className="p-2 rounded-full bg-gray-50 hover:bg-gray-200 text-gray-700"
+          title="Edit reservation"
+        >
+          <MdEdit className="text-lg" />
+        </button>
+      </>
     )}
 
     {/* Fallback dash when neither action is applicable */}
@@ -505,12 +602,34 @@ setChargerNames(chargerMap);
   </div>
 </td>
 
+
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {/* QR Popup */}
+{qrPopup.visible && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-white p-6 rounded-xl shadow-lg text-center relative w-80">
+      <h3 className="text-lg font-semibold mb-3 text-blue-700">Reservation QR Code</h3>
+      <img
+        src={qrPopup.qrData}
+        alt="Reservation QR"
+        className="mx-auto w-48 h-48 border border-gray-200 rounded"
+      />
+      <button
+        onClick={() => setQrPopup({ visible: false, qrData: "" })}
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
