@@ -38,8 +38,8 @@ export default function BackofficeDashboard() {
         return <Stations />;
       case "operators":
         return <Operators />;
-      case "bookings":
-        return <Bookings />;
+      // case "bookings":
+      //   return <Bookings />;
       case "charging":
         return <Charging />;
       default:
@@ -103,14 +103,14 @@ export default function BackofficeDashboard() {
               <FaUserCog /> Operators
             </li>
 
-            <li
+            {/* <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
                 activeTab === "bookings" && "bg-blue-800"
               }`}
               onClick={() => setActiveTab("bookings")}
             >
               <FaClipboardList /> Bookings
-            </li>
+            </li> */}
 
             <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
