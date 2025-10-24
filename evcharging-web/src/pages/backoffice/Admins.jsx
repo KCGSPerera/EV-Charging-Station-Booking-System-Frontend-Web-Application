@@ -7,6 +7,8 @@ import {
   getAdminById,
   createAdmin,
   updateAdmin,
+  enableAdmin,
+  disableAdmin,
 } from "../../api/adminApi";
 
 export default function Admins() {
@@ -108,6 +110,23 @@ export default function Admins() {
     }
   };
 
+  // ✅ Enable/Disable toggle handler
+  const handleToggleStatus = async (admin) => {
+    try {
+      if (admin.disabled) {
+        await enableAdmin(admin.id);
+        toast.success(`Admin ${admin.email} enabled successfully`);
+      } else {
+        await disableAdmin(admin.id);
+        toast.info(`Admin ${admin.email} disabled successfully`);
+      }
+      fetchAdmins();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update admin status");
+    }
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -135,6 +154,7 @@ export default function Admins() {
             <tr>
               <th className="text-left p-3">Email</th>
               <th className="text-left p-3">Role</th>
+              <th className="text-center p-3">Status</th>
               <th className="text-center p-3">Actions</th>
             </tr>
           </thead>
@@ -143,6 +163,23 @@ export default function Admins() {
               <tr key={admin.id} className="border-b hover:bg-gray-50">
                 <td className="p-3">{admin.email}</td>
                 <td className="p-3">BACK OFFICE</td>
+
+                {/* ✅ Toggle Button */}
+                <td className="p-3 text-center">
+                  <label className="inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!admin.disabled}
+                      onChange={() => handleToggleStatus(admin)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:h-5 after:w-5 after:rounded-full after:transition-all peer-checked:after:translate-x-full" />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {admin.disabled ? "Disabled" : "Enabled"}
+                  </p>
+                </td>
+
                 <td className="p-3 flex justify-center gap-3">
                   <button
                     className="text-blue-600 hover:text-blue-800"
@@ -184,6 +221,7 @@ export default function Admins() {
             </h3>
             <p><b>Email:</b> {selectedAdmin.email}</p>
             <p><b>Role:</b> BACK OFFICE</p>
+            <p><b>Status:</b> {selectedAdmin.disabled ? "Disabled" : "Enabled"}</p>
             <div className="mt-4 text-right">
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -249,7 +287,7 @@ function AdminModal({ title, onClose, onSubmit, formData, setFormData, isEdit })
             />
           </div>
 
-          {/* ✅ Password field now appears in both Add & Edit modes */}
+          {/* ✅ Password field for both Add & Edit */}
           <div>
             <label className="block font-semibold">Password</label>
             <input
@@ -260,7 +298,7 @@ function AdminModal({ title, onClose, onSubmit, formData, setFormData, isEdit })
                 setFormData({ ...formData, password: e.target.value })
               }
               className="w-full p-2 border rounded"
-              required={!isEdit} // required only for Add mode
+              required={!isEdit}
             />
             {isEdit && (
               <p className="text-xs text-gray-500 mt-1">
