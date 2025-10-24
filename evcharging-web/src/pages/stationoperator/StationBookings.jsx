@@ -235,13 +235,85 @@ import {
   getMyReservations,
   approveReservation,
   regenerateReservationQr,
+  getOperatorReservationQrCode,
 } from "../../api/stationOperatorReservations";
+
+import { getChargerById } from "../../api/chargersApi";
+
+import { FiCheckCircle } from "react-icons/fi";
+import { FiRefreshCw } from "react-icons/fi";
+import { MdQrCode2 } from "react-icons/md";
+import { MdEdit } from "react-icons/md";
+import { IoQrCodeOutline } from "react-icons/io5"; // For popup display
+import { freeSlotsForReservation } from "../../api/stationOperatorReservations";
+
+
+
+// Toggle used to approve a reservation (clicking approves)
+function ApproveToggle({ status, onApprove }) {
+  const isApproved = status?.toLowerCase() === "approved";
+
+
+
+  if (isApproved) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 text-green-600 font-semibold"
+        title="Already approved"
+      >
+        <FiCheckCircle className="text-lg" />
+        Approved
+      </span>
+    );
+  }
+
+  // Not approved yet -> show a toggle button that triggers approval
+  return (
+    <button
+      onClick={onApprove}
+      className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 hover:bg-gray-400 transition"
+      title="Approve reservation"
+    >
+      <span className="sr-only">Approve</span>
+      <span className="inline-block h-5 w-5 transform rounded-full bg-white translate-x-1 transition" />
+    </button>
+  );
+}
 
 export default function StationBookings() {
   const { user } = useAuth(); // ✅ contains token & operator details
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all | pending | approved | completed
+  const [chargerNames, setChargerNames] = useState({}); 
+  const [qrPopup, setQrPopup] = useState({ visible: false, qrData: "" });
+  // track reservations whose slots were freed in this session
+  const [freedReservations, setFreedReservations] = useState(() => new Set());
+
+  // helper to get local YYYY-MM-DD (avoids UTC shifting issues)
+const todayYMD = () => {
+  const now = new Date();
+  const tzOff = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - tzOff).toISOString().slice(0, 10);
+};
+
+const [dateFilter, setDateFilter] = useState(todayYMD());
+
+// Check if reservation overlaps the selected date (local time)
+const isOnDate = (booking, ymd /* 'YYYY-MM-DD' */) => {
+  if (!booking?.start || !booking?.end) return false;
+
+  const start = new Date(booking.start);
+  const end   = new Date(booking.end);
+
+  // Build local start/end of the selected day
+  const dayStart = new Date(`${ymd}T00:00:00`);
+  const dayEnd   = new Date(`${ymd}T23:59:59.999`);
+
+  // Overlap test: [start, end] intersects [dayStart, dayEnd]
+  return start <= dayEnd && end >= dayStart;
+};
+
 
   // ---------------- FETCH BOOKINGS ----------------
   const fetchBookings = async () => {
@@ -255,6 +327,24 @@ export default function StationBookings() {
 
       const data = await getMyReservations();
       setBookings(data);
+      // ✅ Fetch charger names for each unique chargerId
+// const uniqueChargerIds = [...new Set(data.map((b) => b.chargerId))];
+const uniqueChargerIds = [...new Set(data.map((b) => b.chargerId).filter(Boolean))];
+
+
+const chargerMap = {};
+for (const id of uniqueChargerIds) {
+  try {
+    const charger = await getChargerById(id);
+    chargerMap[id] = charger?.code || "Unknown Charger";
+  } catch {
+    chargerMap[id] = "Unknown Charger";
+  }
+}
+
+setChargerNames(chargerMap);
+
+
     } catch (err) {
       console.error("❌ Fetch Error:", err);
       toast.error("❌ Failed to load reservations.");
@@ -269,7 +359,7 @@ export default function StationBookings() {
   }, []);
 
   // ---------------- APPROVE RESERVATION ----------------
-  const handleApprove = async (id) => {
+  const handleApprove1 = async (id) => {
     try {
       await approveReservation(id);
       toast.success("✅ Reservation approved successfully!");
@@ -279,6 +369,48 @@ export default function StationBookings() {
       toast.error("❌ Failed to approve reservation.");
     }
   };
+
+  // ---------------- APPROVE RESERVATION + GENERATE QR ----------------
+const handleApprove2 = async (id) => {
+  try {
+    await approveReservation(id);
+    const qrRes = await regenerateReservationQr(id); // ✅ Generate QR after approval
+    toast.success("✅ Reservation approved and QR generated!");
+    setQrPopup({ visible: true, qrData: qrRes.qrCode }); // show popup
+    fetchBookings();
+  } catch (err) {
+    console.error(err);
+    toast.error("❌ Failed to approve or generate QR.");
+  }
+};
+
+// ---------------- APPROVE RESERVATION + GENERATE QR ----------------
+const handleApprove = async (id) => {
+  try {
+    await approveReservation(id);
+
+    // ✅ Generate QR after approval
+    const res = await regenerateReservationQr(id);
+
+    // Extract Base64 image string from the API response
+    const qrImage = res.qr?.imageBase64
+      ? `data:${res.qr.imageContentType};base64,${res.qr.imageBase64}`
+      : null;
+
+    if (qrImage) {
+      setQrPopup({ visible: true, qrData: qrImage });
+      toast.success("✅ Reservation approved and QR generated!");
+    } else {
+      toast.warning("⚠️ QR generated, but no image returned.");
+    }
+
+    fetchBookings();
+  } catch (err) {
+    console.error("❌ Approve + QR Error:", err);
+    toast.error("❌ Failed to approve or generate QR.");
+  }
+};
+
 
   // ---------------- REGENERATE QR CODE ----------------
   const handleRegenerateQr = async (id) => {
@@ -293,13 +425,79 @@ export default function StationBookings() {
     }
   };
 
+  // ---------------- VIEW QR CODE ----------------
+const handleViewQr = async (id) => {
+  try {
+    // ✅ Call the operator endpoint to fetch QR
+    const qrData = await getOperatorReservationQrCode(id);
+
+    const qrImage = qrData?.imageBase64
+      ? `data:${qrData.contentType || "image/png"};base64,${qrData.imageBase64}`
+      : null;
+
+    if (qrImage) {
+      setQrPopup({ visible: true, qrData: qrImage });
+    } else {
+      toast.warning("⚠️ No QR image available for this reservation.");
+    }
+  } catch (err) {
+    console.error("❌ View QR Error:", err);
+
+    if (err?.response?.status === 403) {
+      toast.error("🚫 You are not authorized to view this QR code.");
+    } else {
+      toast.error("❌ Failed to load reservation QR.");
+    }
+  }
+};
+
+// ---------------- FREE SLOTS FOR A CANCELLED RESERVATION ----------------
+const handleFreeSlots1 = async (reservationId) => {
+  try {
+    await freeSlotsForReservation(reservationId);
+    toast.success(" Slots were marked available.");
+    fetchBookings(); // refresh bookings
+  } catch (err) {
+    console.error("❌ Free slots error:", err);
+    toast.error(err?.response?.data || "❌ Failed to free slots.");
+  }
+};
+
+const handleFreeSlots = async (reservationId) => {
+  try {
+    await freeSlotsForReservation(reservationId);
+    toast.success("✅ Slots were marked available.");
+
+    // mark this reservation as freed (create a new Set to trigger re-render)
+    setFreedReservations(prev => {
+      const next = new Set(prev);
+      next.add(reservationId);
+      return next;
+    });
+
+    fetchBookings();
+  } catch (err) {
+    console.error("❌ Free slots error:", err);
+    toast.error(err?.response?.data || "❌ Failed to free slots.");
+  }
+};
+
+
   // ---------------- FILTER BOOKINGS ----------------
-  const filteredBookings =
+  const filteredBookings1 =
     filter === "all"
       ? bookings
       : bookings.filter(
           (b) => b.status?.toLowerCase() === filter.toLowerCase()
         );
+
+        const filteredBookings = bookings
+  // date filter (always applied; default is today)
+  .filter((b) => isOnDate(b, dateFilter))
+  // status filter (only when not "all")
+  .filter((b) =>
+    filter === "all" ? true : b.status?.toLowerCase() === filter.toLowerCase()
+  );
 
   // ---------------- RENDER ----------------
   if (loading) {
@@ -315,6 +513,26 @@ export default function StationBookings() {
       <h2 className="text-2xl font-bold text-blue-700 mb-4">
         Station Reservations
       </h2>
+      {/* DATE FILTER BAR */}
+<div className="flex flex-wrap items-center gap-3 mb-4">
+  <label className="text-sm font-medium text-gray-700">
+    Date:
+  </label>
+  <input
+    type="date"
+    value={dateFilter}
+    onChange={(e) => setDateFilter(e.target.value)}
+    className="px-3 py-2 border rounded-md text-sm"
+  />
+  <button
+    onClick={() => setDateFilter(todayYMD())}
+    className="px-3 py-2 rounded-md text-sm border bg-white hover:bg-gray-50"
+    title="Jump to today"
+  >
+    Today
+  </button>
+</div>
+
 
       {/* FILTER BAR */}
       <div className="flex flex-wrap gap-2 mb-6">
@@ -343,10 +561,10 @@ export default function StationBookings() {
           <table className="min-w-full border border-gray-200">
             <thead className="bg-blue-50">
               <tr className="text-left text-blue-700 font-semibold">
-                <th className="p-3 border-b">Reservation ID</th>
+                {/* <th className="p-3 border-b">Reservation ID</th> */}
                 <th className="p-3 border-b">EV Owner NIC</th>
                 <th className="p-3 border-b">Vehicle</th>
-                <th className="p-3 border-b">Station</th>
+                {/* <th className="p-3 border-b">Station</th> */}
                 <th className="p-3 border-b">Charger</th>
                 <th className="p-3 border-b">Connector</th>
                 <th className="p-3 border-b">Start</th>
@@ -359,15 +577,22 @@ export default function StationBookings() {
             <tbody>
               {filteredBookings.map((b) => (
                 <tr key={b.id} className="hover:bg-gray-50 text-sm">
-                  <td className="p-3 border-b">{b.id}</td>
+                  {/* <td className="p-3 border-b">{b.id}</td> */}
                   <td className="p-3 border-b">{b.ownerNic}</td>
                   <td className="p-3 border-b">
                     {b.vehicle
                       ? `${b.vehicle.make} ${b.vehicle.model} (${b.vehicle.plate})`
                       : "—"}
                   </td>
-                  <td className="p-3 border-b">{b.stationId}</td>
-                  <td className="p-3 border-b">{b.chargerId}</td>
+                  {/* <td className="p-3 border-b">{b.stationId}</td> */}
+                  {/* <td className="p-3 border-b">{b.chargerId}</td> */}
+                  {/* <td className="p-3 border-b">{chargerNames[b.code] || "Loading..."}</td> */}
+                  {/* <td className="p-3 border-b">{chargerNames[b.chargerId] || "Loading..."}</td> */}
+
+<td className="p-3 border-b">
+  {b.chargerId ? (chargerNames[b.chargerId] ?? "Loading...") : "—"}
+</td>
+
                   <td className="p-3 border-b">
                     {b.vehicle?.connectorType || "—"}
                   </td>
@@ -379,13 +604,13 @@ export default function StationBookings() {
                   </td>
                   <td
                     className={`p-3 border-b font-semibold ${
-                      b.status === "Pending"
+                      b.status === "PENDING"
                         ? "text-yellow-600"
-                        : b.status === "Approved"
+                        : b.status === "APPROVED"
                         ? "text-green-600"
-                        : b.status === "Completed"
+                        : b.status === "COMPLETED"
                         ? "text-blue-600"
-                        : b.status === "Cancelled"
+                        : b.status === "CANCELLED"
                         ? "text-red-600"
                         : "text-gray-600"
                     }`}
@@ -394,8 +619,8 @@ export default function StationBookings() {
                   </td>
 
                   {/* ACTION BUTTONS */}
-                  <td className="p-3 border-b text-center">
-                    {b.status === "Pending" ? (
+                  {/* <td className="p-3 border-b text-center">
+                    {b.status === "pending" ? (
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => handleApprove(b.id)}
@@ -404,7 +629,7 @@ export default function StationBookings() {
                           Approve
                         </button>
                       </div>
-                    ) : b.status === "Approved" ? (
+                    ) : b.status === "approved" ? (
                       <button
                         onClick={() => handleRegenerateQr(b.id)}
                         className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
@@ -414,13 +639,151 @@ export default function StationBookings() {
                     ) : (
                       <span className="text-gray-400">—</span>
                     )}
-                  </td>
+                  </td> */}
+
+                 <td className="p-3 border-b">
+  <div className="flex items-center justify-center gap-3">
+    {/* Toggle to approve when Pending */}
+    {b.status === "PENDING" && (
+      <ApproveToggle status={b.status} onApprove={() => handleApprove(b.id)} />
+    )}
+
+    {/* When Approved — show View QR, Regenerate, and Edit */}
+    {b.status === "APPROVED" && (
+      <>
+        {/* ✅ View QR button */}
+        {/* <button
+          onClick={() => {
+            const qrImage = b.qr?.imageBase64
+              ? `data:${b.qr.imageContentType};base64,${b.qr.imageBase64}`
+              : null;
+            if (qrImage) {
+              setQrPopup({ visible: true, qrData: qrImage });
+            } else {
+              toast.warning("⚠️ No QR image available for this reservation.");
+            }
+          }}
+          className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
+          title="View QR"
+        >
+          <IoQrCodeOutline className="text-xl" />
+        </button> */}
+
+        {/* ✅ View QR button */}
+        {/*
+<button
+  onClick={() => {
+    const qrImage = b.qr?.imageBase64
+      ? `data:${b.qr.imageContentType || "image/png"};base64,${b.qr.imageBase64}`
+      : null;
+
+    if (qrImage) {
+      setQrPopup({ visible: true, qrData: qrImage }); // ✅ open popup with image
+    } else {
+      toast.warning("⚠️ QR image not available for this reservation.");
+    }
+  }}
+  className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
+  title="View QR"
+>
+  <IoQrCodeOutline className="text-xl" />
+</button>
+*/}
+
+{/* View QR button (fetch via owners API) */}
+<button
+  onClick={() => handleViewQr(b.id)}
+  className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
+  title="View QR"
+>
+  <IoQrCodeOutline className="text-xl" />
+</button>
+
+        {/* 🔄 Regenerate QR */}
+        {/* <button
+          onClick={() => handleRegenerateQr(b.id)}
+          className="p-2 rounded-full bg-green-50 hover:bg-green-100 text-green-700"
+          title="Regenerate QR"
+        >
+          <MdQrCode2 className="text-xl" />
+        </button> */}
+
+        {/* ✏️ Edit reservation */}
+        <button
+          onClick={() => toast.info("🛠 Edit functionality coming soon!")}
+          className="p-2 rounded-full bg-gray-50 hover:bg-gray-200 text-gray-700"
+          title="Edit reservation"
+        >
+          <MdEdit className="text-lg" />
+        </button>
+      </>
+    )}
+
+    {/* Fallback dash when neither action is applicable */}
+    {!(b.status === "PENDING" || b.status === "APPROVED") && (
+      <span className="text-gray-400">—</span>
+    )}
+
+
+    {/* When Cancelled — allow operator to free the booked slots */}
+{/* {b.status === "CANCELLED" && (
+  <button
+    onClick={() => handleFreeSlots(b.id)}
+    className="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 text-sm"
+    title="Free slots back to available"
+  >
+    Free Slots
+  </button>
+)} */}
+{/* When Cancelled — allow operator to free the booked slots; show note after done */}
+{b.status === "CANCELLED" && (
+  freedReservations.has(b.id) ? (
+    <span className="text-xs font-medium text-green-600" title="Slots already made available">
+      Slots made available
+    </span>
+  ) : (
+    <button
+      onClick={() => handleFreeSlots(b.id)}
+      className="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 text-sm"
+      title="Free slots back to available"
+    >
+      Free Slots
+    </button>
+  )
+)}
+
+
+  </div>
+</td>
+
+
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {/* QR Popup */}
+{qrPopup.visible && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-white p-6 rounded-xl shadow-lg text-center relative w-80">
+      <h3 className="text-lg font-semibold mb-3 text-blue-700">Reservation QR Code</h3>
+      <img
+        src={qrPopup.qrData}
+        alt="Reservation QR"
+        className="mx-auto w-48 h-48 border border-gray-200 rounded"
+      />
+      <button
+        onClick={() => setQrPopup({ visible: false, qrData: "" })}
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

@@ -15,7 +15,9 @@
 import axios from "axios";
 
 // ✅ Backend base URL
-const API_URL = "http://localhost:5062/api";
+// const API_URL = "http://localhost:5062/api";
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+const API_URL = `${BASE_URL}`;
 
 // ✅ Auth header helper
 const authHeader = () => ({
