@@ -17,7 +17,9 @@ import axios from "axios";
 // -----------------------------
 // 🔹 Base URL
 // -----------------------------
-const API_URL = "http://localhost:5062/api/operators";
+// const API_URL = "http://localhost:5062/api/operators";
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+const API_URL = `${BASE_URL}/operators`;
 
 // -----------------------------
 // 🔹 Common Authorization Header

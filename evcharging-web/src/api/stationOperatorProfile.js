@@ -18,7 +18,9 @@
 import axios from "axios";
 
 // Base API URL (update when deployed)
-const API_URL = "http://localhost:5062/api/station-operators";
+// const API_URL = "http://localhost:5062/api/station-operators";
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+const API_URL = `${BASE_URL}/station-operators`;
 
 // Common header for authenticated requests
 const authHeader = () => ({

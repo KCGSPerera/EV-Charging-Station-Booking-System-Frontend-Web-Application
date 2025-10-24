@@ -12,7 +12,9 @@
 
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5062/api/operators/time-slots";
+// const API_BASE_URL = "http://localhost:5062/api/operators/time-slots";
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+const API_URL = `${BASE_URL}/time-slots`;
 
 // -----------------------------
 // 🔹 Helper: Auth header

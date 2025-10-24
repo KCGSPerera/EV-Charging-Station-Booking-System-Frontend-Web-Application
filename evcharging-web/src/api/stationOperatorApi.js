@@ -12,7 +12,9 @@
 import axios from "axios";
 
 // Backend base URL (update when deployed)
-const API_URL = "http://localhost:5062/api/stations";
+// const API_URL = "http://localhost:5062/api/stations";
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+const API_URL = `${BASE_URL}/stations`;
 
 // Common header for authorized requests
 const authHeader = () => ({
