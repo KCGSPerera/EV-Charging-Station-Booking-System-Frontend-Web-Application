@@ -15,10 +15,11 @@ import {
   createTimeSlots,
   getAllTimeSlots,
   cancelTimeSlot,
+  restoreTimeSlot,
 } from "../../api/stationOperatorTimeSlotsApi";
 import { getMyStations } from "../../api/stationOperatorApi";
 import { getChargersByStation, getChargerById } from "../../api/chargersApi";
-import { FaCalendarAlt, FaClock, FaTimes, FaInfoCircle, FaSearch } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaTimes, FaInfoCircle, FaSearch, FaCheckCircle } from "react-icons/fa";
 
 export default function TimeSlots() {
   const [timeSlots, setTimeSlots] = useState([]);
@@ -360,6 +361,19 @@ setGroupedSlots(grouped);
       toast.error("❌ Failed to cancel slot.");
     }
   };
+
+    // ---------------- RESTORE HANDLER ----------------
+  const handleRestore = async (slotId) => {
+    try {
+      await restoreTimeSlot(slotId);
+      toast.success("✅ Slot made available.");
+      fetchSlots();
+    } catch (error) {
+      console.error(error);
+      toast.error("❌ Failed to make slot available.");
+    }
+  };
+
 
   // ---------------- NEW: View Slot Details Modal ----------------
 const [showSlotModal, setShowSlotModal] = useState(false);
@@ -707,7 +721,9 @@ const filterTodayOnly = (slots) => {
                       </button>
                     )} */}
 
-                    {slot.status !== "Cancelled" && (
+{/* ===================================================================== */}
+
+                    {/* {slot.status !== "Cancelled" && (
   <button
     onClick={() => {
       setSelectedSlotId(slot.id);
@@ -717,7 +733,29 @@ const filterTodayOnly = (slots) => {
   >
     <FaTimes /> Cancel
   </button>
-)}
+)} */}
+
+{/* ===================================================================== */}
+
+                    {slot.status === "cancelled" ? (
+                      <button
+                        onClick={() => handleRestore(slot.id)}
+                        className="flex items-center gap-1 text-sm text-green-600 hover:text-green-800"
+                      >
+                        <FaCheckCircle /> Make available
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setSelectedSlotId(slot.id);
+                          setShowCancelModal(true);
+                        }}
+                        className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
+                      >
+                        <FaTimes /> Cancel
+                      </button>
+                    )}
+
 
 
                   </div>
