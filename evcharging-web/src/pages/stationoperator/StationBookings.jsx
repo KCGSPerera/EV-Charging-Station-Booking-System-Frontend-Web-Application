@@ -245,6 +245,7 @@ import { FiRefreshCw } from "react-icons/fi";
 import { MdQrCode2 } from "react-icons/md";
 import { MdEdit } from "react-icons/md";
 import { IoQrCodeOutline } from "react-icons/io5"; // For popup display
+import { freeSlotsForReservation } from "../../api/stationOperatorReservations";
 
 
 
@@ -286,6 +287,8 @@ export default function StationBookings() {
   const [filter, setFilter] = useState("all"); // all | pending | approved | completed
   const [chargerNames, setChargerNames] = useState({}); 
   const [qrPopup, setQrPopup] = useState({ visible: false, qrData: "" });
+  // track reservations whose slots were freed in this session
+  const [freedReservations, setFreedReservations] = useState(() => new Set());
 
 
   // ---------------- FETCH BOOKINGS ----------------
@@ -397,7 +400,7 @@ const handleApprove = async (id) => {
       toast.error("❌ Failed to regenerate QR code.");
     }
   };
-  
+
   // ---------------- VIEW QR CODE ----------------
 const handleViewQr = async (id) => {
   try {
@@ -423,6 +426,38 @@ const handleViewQr = async (id) => {
     }
   }
 };
+
+// ---------------- FREE SLOTS FOR A CANCELLED RESERVATION ----------------
+const handleFreeSlots1 = async (reservationId) => {
+  try {
+    await freeSlotsForReservation(reservationId);
+    toast.success(" Slots were marked available.");
+    fetchBookings(); // refresh bookings
+  } catch (err) {
+    console.error("❌ Free slots error:", err);
+    toast.error(err?.response?.data || "❌ Failed to free slots.");
+  }
+};
+
+const handleFreeSlots = async (reservationId) => {
+  try {
+    await freeSlotsForReservation(reservationId);
+    toast.success("✅ Slots were marked available.");
+
+    // mark this reservation as freed (create a new Set to trigger re-render)
+    setFreedReservations(prev => {
+      const next = new Set(prev);
+      next.add(reservationId);
+      return next;
+    });
+
+    fetchBookings();
+  } catch (err) {
+    console.error("❌ Free slots error:", err);
+    toast.error(err?.response?.data || "❌ Failed to free slots.");
+  }
+};
+
 
   // ---------------- FILTER BOOKINGS ----------------
   const filteredBookings =
@@ -636,6 +671,36 @@ const handleViewQr = async (id) => {
     {!(b.status === "PENDING" || b.status === "APPROVED") && (
       <span className="text-gray-400">—</span>
     )}
+
+
+    {/* When Cancelled — allow operator to free the booked slots */}
+{/* {b.status === "CANCELLED" && (
+  <button
+    onClick={() => handleFreeSlots(b.id)}
+    className="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 text-sm"
+    title="Free slots back to available"
+  >
+    Free Slots
+  </button>
+)} */}
+{/* When Cancelled — allow operator to free the booked slots; show note after done */}
+{b.status === "CANCELLED" && (
+  freedReservations.has(b.id) ? (
+    <span className="text-xs font-medium text-green-600" title="Slots already made available">
+      Slots made available
+    </span>
+  ) : (
+    <button
+      onClick={() => handleFreeSlots(b.id)}
+      className="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 text-sm"
+      title="Free slots back to available"
+    >
+      Free Slots
+    </button>
+  )
+)}
+
+
   </div>
 </td>
 
