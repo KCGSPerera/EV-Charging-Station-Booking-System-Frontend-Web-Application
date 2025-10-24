@@ -1,7 +1,8 @@
 // src/api/adminApi.js
 import axios from "axios";
 
-const API_URL = "http://localhost:5062/api/Admins";
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+const API_URL = `${BASE_URL}/Admins`;
 
 // ✅ Get all admins
 // export async function getAllAdmins() {
@@ -14,7 +15,7 @@ const API_URL = "http://localhost:5062/api/Admins";
 
 export async function getAllAdmins(skip = 0, take = 50) {
   const token = localStorage.getItem("token");
-  const response = await axios.get("http://localhost:5062/api/admin/users", {
+  const response = await axios.get(`${BASE_URL}/admin/users`, {
     params: { skip, take },
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -68,7 +69,7 @@ export async function deleteAdmin(id) {
 export async function disableAdmin(id) {
   const token = localStorage.getItem("token");
   const response = await axios.post(
-    `http://localhost:5062/api/admin/users/${id}/disable`,
+    `${BASE_URL}/admin/users/${id}/disable`,
     {},
     {
       headers: { Authorization: `Bearer ${token}` },
@@ -81,7 +82,7 @@ export async function disableAdmin(id) {
 export async function enableAdmin(id) {
   const token = localStorage.getItem("token");
   const response = await axios.post(
-    `http://localhost:5062/api/admin/users/${id}/enable`,
+    `${BASE_URL}/admin/users/${id}/enable`,
     {},
     {
       headers: { Authorization: `Bearer ${token}` },

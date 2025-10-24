@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+
 // Base API URL (common for all admin endpoints)
-const API_URL = "http://localhost:5062/api";
+const API_URL =  BASE_URL;
 
 // Helper to attach Authorization header
 const authHeader = () => ({

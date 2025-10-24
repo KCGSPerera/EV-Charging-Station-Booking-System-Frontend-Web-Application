@@ -4,8 +4,10 @@
 
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_BASE_API_URL; 
+
 // ✅ Base URL (as per backend controller)
-const API_URL = "http://localhost:5062/api/admin/owners";
+const API_URL = `${BASE_URL}/admin/owners`;
 
 // ✅ Auth header helper
 const authHeader = () => ({
@@ -78,7 +80,7 @@ export async function resetEvOwnerPassword(nic, newPassword) {
 // -----------------------------
 export async function getAllEvOwners(q = "", skip = 0, take = 50) {
   const params = { q, skip, take };
-  const response = await axios.get("http://localhost:5062/api/admin/owners/all", {
+  const response = await axios.get(`${API_URL}/all`, {
     ...authHeader(),
     params,
   });
@@ -91,7 +93,7 @@ export async function getAllEvOwners(q = "", skip = 0, take = 50) {
 // -----------------------------
 export async function createEvOwner(ownerData) {
   const response = await axios.post(
-    "http://localhost:5062/api/owners/signup",
+    `${BASE_URL}/owners/signup`,
     ownerData,
     {
       headers: {

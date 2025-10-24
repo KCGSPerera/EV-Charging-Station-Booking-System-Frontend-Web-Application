@@ -4,7 +4,9 @@
 
 import axios from "axios";
 
-const API_URL = "http://localhost:5062/api/bookings";
+const BASE_URL = import.meta.env.VITE_BASE_API_URL;
+
+const API_URL = `${BASE_URL}/bookings`;
 
 const authHeader = () => ({
   headers: {
