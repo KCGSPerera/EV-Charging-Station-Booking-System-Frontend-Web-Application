@@ -4,8 +4,10 @@
 
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_BASE_API_URL; 
+
 // ✅ Base URL (match with your Swagger setup)
-const API_URL = "http://localhost:5062/api/admin/station-operators";
+const API_URL = `${BASE_URL}/admin/station-operators`;
 
 // ✅ Auth header helper
 const authHeader = () => ({
