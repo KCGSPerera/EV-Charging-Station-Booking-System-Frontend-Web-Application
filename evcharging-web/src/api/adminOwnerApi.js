@@ -84,3 +84,21 @@ export async function getAllEvOwners(q = "", skip = 0, take = 50) {
   });
   return response.data;
 }
+
+
+// -----------------------------
+// 🔹 Create New EV Owner (Admin)
+// -----------------------------
+export async function createEvOwner(ownerData) {
+  const response = await axios.post(
+    "http://localhost:5062/api/owners/signup",
+    ownerData,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return response.data;
+}
