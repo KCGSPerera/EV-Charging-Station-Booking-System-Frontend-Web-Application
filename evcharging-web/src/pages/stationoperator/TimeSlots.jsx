@@ -105,7 +105,7 @@ const [cancelReason, setCancelReason] = useState("");
   }
 };
 
-const fetchSlots = async () => {
+const fetchSlotsCorrect = async () => {
   try {
     setLoading(true);
     const pageSize = 50; // backend default limit
@@ -139,6 +139,59 @@ const fetchSlots = async () => {
   }
 };
 
+const fetchSlots = async (forceToday = false) => {
+  try {
+    setLoading(true);
+    const pageSize = 50; // backend default limit
+    let skip = 0;
+    let allSlots = [];
+
+    while (true) {
+      const batch = await getAllTimeSlots({ skip, take: pageSize });
+      if (!batch || batch.length === 0) break;
+      allSlots = [...allSlots, ...batch];
+
+      if (batch.length < pageSize) break; // last page reached
+      skip += pageSize;
+    }
+
+    // Save the full list for filtering later
+    setTimeSlots(allSlots);
+
+    // Default view: hide past slots unless a filter is active,
+    // or if forceToday is requested.
+
+
+    // const base = forceToday
+    //   ? filterFromTodayOnward(allSlots)
+    //   : isFilterActive(filters)
+    //   ? allSlots
+    //   : filterFromTodayOnward(allSlots);
+
+    const base = forceToday
+  ? filterTodayOnly(allSlots)
+  : isFilterActive(filters)
+  ? allSlots
+  : filterTodayOnly(allSlots);
+
+
+    // group by date derived from slot.start
+    const grouped = base.reduce((acc, slot) => {
+      const dateKey = new Date(slot.start).toISOString().slice(0, 10);
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(slot);
+      return acc;
+    }, {});
+
+    setGroupedSlots(grouped);
+  } catch (error) {
+    console.error(error);
+    toast.error("❌ Failed to fetch all time slots.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // ---------------- FETCH STATIONS + CHARGERS ----------------
   const fetchChargers = async () => {
@@ -156,7 +209,7 @@ const fetchSlots = async () => {
   };
 
   // ---------------- FILTER HANDLER ----------------
-  const handleFilter = async () => {
+  const handleFilterCorrect = async () => {
     try {
       let filtered = [...timeSlots];
 
@@ -230,6 +283,71 @@ setGroupedSlots(grouped);
     }
   };
 
+  const handleFilter = async () => {
+  try {
+    const active = isFilterActive(filters);
+
+    // Start from ALL slots when filtering; from today onward for default view
+    // let filtered = active ? [...timeSlots] : filterFromTodayOnward([...timeSlots]);
+    let filtered = active ? [...timeSlots] : filterTodayOnly([...timeSlots]);
+
+
+    // Date filter (YYYY-MM-DD) using start
+    if (filters.date) {
+      filtered = filtered.filter((slot) =>
+        new Date(slot.start).toISOString().startsWith(filters.date)
+      );
+    }
+
+    // Convert start/end time to minutes since midnight
+    const startTotalMins =
+      filters.startHour && filters.startMinute
+        ? parseInt(filters.startHour) * 60 + parseInt(filters.startMinute)
+        : null;
+    const endTotalMins =
+      filters.endHour && filters.endMinute
+        ? parseInt(filters.endHour) * 60 + parseInt(filters.endMinute)
+        : null;
+
+    // Filter by time range
+    if (startTotalMins !== null)
+      filtered = filtered.filter((slot) => {
+        const slotStart = new Date(slot.start);
+        const slotMins = slotStart.getHours() * 60 + slotStart.getMinutes();
+        return slotMins >= startTotalMins;
+      });
+
+    if (endTotalMins !== null)
+      filtered = filtered.filter((slot) => {
+        const slotEnd = new Date(slot.end);
+        const slotMins = slotEnd.getHours() * 60 + slotEnd.getMinutes();
+        return slotMins <= endTotalMins;
+      });
+
+    // Charger filter
+    if (filters.chargerId)
+      filtered = filtered.filter((slot) => slot.chargerId === filters.chargerId);
+
+    // Status filter
+    if (filters.status)
+      filtered = filtered.filter(
+        (slot) => slot.status.toLowerCase() === filters.status.toLowerCase()
+      );
+
+    // Regroup by date derived from start
+    const grouped = filtered.reduce((acc, slot) => {
+      const dateKey = new Date(slot.start).toISOString().slice(0, 10);
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(slot);
+      return acc;
+    }, {});
+    setGroupedSlots(grouped);
+  } catch (error) {
+    console.error(error);
+    toast.error("❌ Failed to filter slots.");
+  }
+};
+
   // ---------------- CANCEL HANDLER ----------------
   const handleCancel = async (slotId) => {
     const reason = prompt("Enter cancellation reason:");
@@ -254,6 +372,38 @@ const [selectedCharger, setSelectedCharger] = useState(null);
     fetchSlots();
     fetchChargers();
   }, []);
+
+  // Is any filter set? (if yes, include past slots)
+const isFilterActive = (f) =>
+  Boolean(
+    f.date ||
+      f.startHour ||
+      f.startMinute ||
+      f.endHour ||
+      f.endMinute ||
+      f.chargerId ||
+      f.status
+  );
+
+// Keep only slots starting today or later (local time)
+const filterFromTodayOnward1 = (slots) => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  return slots.filter((s) => new Date(s.start) >= todayStart);
+};
+
+const filterTodayOnly = (slots) => {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return slots.filter((s) => {
+    const d = new Date(s.start);
+    return d >= start && d < end;
+  });
+};
+
+
 
   // ---------------- RENDER ----------------
   if (loading)
@@ -429,18 +579,31 @@ const [selectedCharger, setSelectedCharger] = useState(null);
   </button>
 
   <button
+    // onClick={() => {
+    //   setFilters({
+    //     date: "",
+    //     startHour: "",
+    //     startMinute: "",
+    //     endHour: "",
+    //     endMinute: "",
+    //     chargerId: "",
+    //     status: "",
+    //   });
+    //   fetchSlots(); // 🔄 reload all slots
+    // }}
     onClick={() => {
-      setFilters({
-        date: "",
-        startHour: "",
-        startMinute: "",
-        endHour: "",
-        endMinute: "",
-        chargerId: "",
-        status: "",
-      });
-      fetchSlots(); // 🔄 reload all slots
-    }}
+  setFilters({
+    date: "",
+    startHour: "",
+    startMinute: "",
+    endHour: "",
+    endMinute: "",
+    chargerId: "",
+    status: "",
+  });
+  fetchSlots(true); // 🔄 force today & future after reset
+}}
+
     className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
   >
     Reset
