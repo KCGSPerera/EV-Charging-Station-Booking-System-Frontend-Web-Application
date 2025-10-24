@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -17,9 +18,11 @@ import StationOwners from "./StationOwners";
 import StationProfile from "./StationProfile";
 import StationCharging from "./StationCharging"; 
 import TimeSlots from "./TimeSlots";
+import { getOperatorReservationStats } from "../../api/stationOperatorReservations";
 
 export default function StationOperatorDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [stats, setStats] = useState(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -49,7 +52,7 @@ export default function StationOperatorDashboard() {
               Station Operator Dashboard
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-100 p-4 rounded shadow text-center">
                 <h3 className="text-xl font-semibold">Pending Bookings</h3>
                 <p className="text-3xl font-bold text-blue-600">—</p>
@@ -64,11 +67,73 @@ export default function StationOperatorDashboard() {
                 <h3 className="text-xl font-semibold">Completed</h3>
                 <p className="text-3xl font-bold text-yellow-600">—</p>
               </div>
-            </div>
+            </div> */}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div className="bg-blue-100 p-4 rounded shadow text-center">
+    <h3 className="text-xl font-semibold">Pending Bookings</h3>
+    <p className="text-3xl font-bold text-blue-600">
+      {stats ? stats.pendingCount : "—"}
+    </p>
+  </div>
+
+  <div className="bg-green-100 p-4 rounded shadow text-center">
+    <h3 className="text-xl font-semibold">Approved</h3>
+    <p className="text-3xl font-bold text-green-600">
+      {stats ? stats.approvedCount : "—"}
+    </p>
+  </div>
+
+  <div className="bg-yellow-100 p-4 rounded shadow text-center">
+    <h3 className="text-xl font-semibold">Completed</h3>
+    <p className="text-3xl font-bold text-yellow-600">
+      {stats ? stats.completedCount : "—"}
+    </p>
+  </div>
+</div>
+
+{/* Optional extra row for more details */}
+{stats && (
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+    <div className="bg-gray-100 p-4 rounded shadow text-center">
+      <h3 className="text-sm font-semibold text-gray-700">Checked In</h3>
+      <p className="text-2xl font-bold text-gray-600">{stats.checkedInCount}</p>
+    </div>
+    <div className="bg-purple-100 p-4 rounded shadow text-center">
+      <h3 className="text-sm font-semibold text-purple-700">Charging</h3>
+      <p className="text-2xl font-bold text-purple-600">{stats.chargingCount}</p>
+    </div>
+    <div className="bg-red-100 p-4 rounded shadow text-center">
+      <h3 className="text-sm font-semibold text-red-700">Cancelled</h3>
+      <p className="text-2xl font-bold text-red-600">{stats.cancelledCount}</p>
+    </div>
+    <div className="bg-indigo-100 p-4 rounded shadow text-center">
+      <h3 className="text-sm font-semibold text-indigo-700">Total</h3>
+      <p className="text-2xl font-bold text-indigo-600">{stats.totalCount}</p>
+    </div>
+  </div>
+)}
+
           </div>
         );
     }
   };
+
+  const loadStats = async () => {
+  try {
+    const data = await getOperatorReservationStats();
+    setStats(data);
+  } catch (e) {
+    console.error("❌ Failed to fetch operator stats:", e);
+  }
+};
+
+useEffect(() => {
+  if (activeTab === "overview") {
+    loadStats();
+  }
+}, [activeTab]);
+
 
   return (
     <div className="flex h-screen bg-gray-100">
