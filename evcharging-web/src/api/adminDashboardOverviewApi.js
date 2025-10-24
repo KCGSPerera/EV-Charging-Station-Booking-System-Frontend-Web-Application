@@ -1,9 +1,22 @@
+import axios from "axios";
+
+// Base API URL (common for all admin endpoints)
+const API_URL = "http://localhost:5062/api";
+
+// Helper to attach Authorization header
+const authHeader = () => ({
+  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+});
+
 // -----------------------------
 // 🔹 Get All Operators (with search + pagination)
 // -----------------------------
 export async function getAllOperators(q = "", skip = 0, take = 50) {
   const params = { q, skip, take };
-  const response = await axios.get(API_URL, { ...authHeader(), params });
+  const response = await axios.get(`${API_URL}/admin/station-operators`, {
+    ...authHeader(),
+    params,
+  });
   return response.data;
 }
 
@@ -12,7 +25,7 @@ export async function getAllOperators(q = "", skip = 0, take = 50) {
 // -----------------------------
 export async function getAllEvOwners(q = "", skip = 0, take = 50) {
   const params = { q, skip, take };
-  const response = await axios.get("http://localhost:5062/api/admin/owners/all", {
+  const response = await axios.get(`${API_URL}/admin/owners/all`, {
     ...authHeader(),
     params,
   });
@@ -24,7 +37,10 @@ export async function getAllEvOwners(q = "", skip = 0, take = 50) {
 // -----------------------------
 export async function getPendingEvOwners(q = "", skip = 0, take = 50) {
   const params = { q, skip, take };
-  const response = await axios.get(`${API_URL}/pending`, { ...authHeader(), params });
+  const response = await axios.get(`${API_URL}/admin/owners/pending`, {
+    ...authHeader(),
+    params,
+  });
   return response.data;
 }
 
@@ -33,6 +49,9 @@ export async function getPendingEvOwners(q = "", skip = 0, take = 50) {
 // -----------------------------
 export async function getAllStations(q = "", skip = 0, take = 50) {
   const params = { q, skip, take };
-  const response = await axios.get(API_URL, { ...authHeader(), params });
+  const response = await axios.get(`${API_URL}/stations`, {
+    ...authHeader(),
+    params,
+  });
   return response.data;
 }
