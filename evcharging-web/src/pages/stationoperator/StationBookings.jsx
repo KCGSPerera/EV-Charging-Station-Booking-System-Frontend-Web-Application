@@ -536,7 +536,7 @@ const handleFreeSlots = async (reservationId) => {
 
       {/* FILTER BAR */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {["all", "pending", "approved", "completed", "cancelled"].map(
+        {["all", "pending", "approved", "completed", "cancelled", "checked_in", "charging"].map(
           (status) => (
             <button
               key={status}
@@ -547,7 +547,8 @@ const handleFreeSlots = async (reservationId) => {
                   : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {/* {status.charAt(0).toUpperCase() + status.slice(1)} */}
+              {status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
             </button>
           )
         )}

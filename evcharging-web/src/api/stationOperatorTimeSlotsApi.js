@@ -97,3 +97,16 @@ export async function cancelTimeSlot(id, reason) {
   );
   return response.data;
 }
+
+// -----------------------------
+// 🔹 Restore a Cancelled Time Slot
+// -----------------------------
+// PATCH /api/operators/time-slots/{id}/restore
+export async function restoreTimeSlot(id) {
+  const response = await axios.patch(
+    `${API_BASE_URL}/${id}/restore`,
+    {}, // no request body needed
+    authHeader()
+  );
+  return response.data;
+}

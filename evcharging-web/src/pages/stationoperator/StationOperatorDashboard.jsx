@@ -181,14 +181,14 @@ useEffect(() => {
               <FaBolt /> Charging
             </li>
 
-            <li
+            {/* <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
                 activeTab === "owners" && "bg-blue-800"
               }`}
               onClick={() => setActiveTab("owners")}
             >
               <FaUsers /> EV Owners
-            </li>
+            </li> */}
 
             <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
