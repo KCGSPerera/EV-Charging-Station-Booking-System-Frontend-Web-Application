@@ -290,6 +290,30 @@ export default function StationBookings() {
   // track reservations whose slots were freed in this session
   const [freedReservations, setFreedReservations] = useState(() => new Set());
 
+  // helper to get local YYYY-MM-DD (avoids UTC shifting issues)
+const todayYMD = () => {
+  const now = new Date();
+  const tzOff = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - tzOff).toISOString().slice(0, 10);
+};
+
+const [dateFilter, setDateFilter] = useState(todayYMD());
+
+// Check if reservation overlaps the selected date (local time)
+const isOnDate = (booking, ymd /* 'YYYY-MM-DD' */) => {
+  if (!booking?.start || !booking?.end) return false;
+
+  const start = new Date(booking.start);
+  const end   = new Date(booking.end);
+
+  // Build local start/end of the selected day
+  const dayStart = new Date(`${ymd}T00:00:00`);
+  const dayEnd   = new Date(`${ymd}T23:59:59.999`);
+
+  // Overlap test: [start, end] intersects [dayStart, dayEnd]
+  return start <= dayEnd && end >= dayStart;
+};
+
 
   // ---------------- FETCH BOOKINGS ----------------
   const fetchBookings = async () => {
@@ -460,12 +484,20 @@ const handleFreeSlots = async (reservationId) => {
 
 
   // ---------------- FILTER BOOKINGS ----------------
-  const filteredBookings =
+  const filteredBookings1 =
     filter === "all"
       ? bookings
       : bookings.filter(
           (b) => b.status?.toLowerCase() === filter.toLowerCase()
         );
+
+        const filteredBookings = bookings
+  // date filter (always applied; default is today)
+  .filter((b) => isOnDate(b, dateFilter))
+  // status filter (only when not "all")
+  .filter((b) =>
+    filter === "all" ? true : b.status?.toLowerCase() === filter.toLowerCase()
+  );
 
   // ---------------- RENDER ----------------
   if (loading) {
@@ -481,6 +513,26 @@ const handleFreeSlots = async (reservationId) => {
       <h2 className="text-2xl font-bold text-blue-700 mb-4">
         Station Reservations
       </h2>
+      {/* DATE FILTER BAR */}
+<div className="flex flex-wrap items-center gap-3 mb-4">
+  <label className="text-sm font-medium text-gray-700">
+    Date:
+  </label>
+  <input
+    type="date"
+    value={dateFilter}
+    onChange={(e) => setDateFilter(e.target.value)}
+    className="px-3 py-2 border rounded-md text-sm"
+  />
+  <button
+    onClick={() => setDateFilter(todayYMD())}
+    className="px-3 py-2 rounded-md text-sm border bg-white hover:bg-gray-50"
+    title="Jump to today"
+  >
+    Today
+  </button>
+</div>
+
 
       {/* FILTER BAR */}
       <div className="flex flex-wrap gap-2 mb-6">
