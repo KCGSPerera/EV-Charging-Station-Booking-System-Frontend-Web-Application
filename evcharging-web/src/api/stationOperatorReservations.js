@@ -167,3 +167,32 @@ export async function getOperatorReservationQrCode(reservationId) {
   );
   return JSON.parse(response.data);
 }
+
+
+// Free slots for a CANCELLED reservation
+export async function freeSlotsForReservation(reservationId) {
+  const response = await axios.post(
+    `${API_URL}/reservations/${reservationId}/free-slots`,
+    {},
+    { ...authHeader(), responseType: "text" }
+  );
+  // No body expected (204), but handle text/plain safely if returned
+  return response.data ? JSON.parse(response.data) : true;
+}
+
+
+// Get overall reservation statistics for the operator
+export async function getOperatorReservationStats() {
+  const response = await axios.get(`${API_URL}/stats`, {
+    ...authHeader(),
+    responseType: "text",
+  });
+
+  // Some backends return text/plain, so we parse if needed
+  const data =
+    typeof response.data === "string"
+      ? JSON.parse(response.data)
+      : response.data;
+
+  return data; // { totalCount, pendingCount, approvedCount, checkedInCount, chargingCount, completedCount, cancelledCount }
+}
