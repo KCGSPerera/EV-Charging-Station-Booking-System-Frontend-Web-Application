@@ -7,7 +7,7 @@ import {
   FaUserCog,
   FaClipboardList,
   FaSignOutAlt,
-  FaUserShield
+  FaUserShield,
 } from "react-icons/fa";
 import Admins from "./Admins";
 import Operators from "./Operators";
@@ -15,6 +15,7 @@ import Owners from "./Owners";
 import Stations from "./Stations";
 import Bookings from "./Bookings";
 import Charging from "./Charging";
+import AdminDashboardOverview from "./AdminDashboardOverview";
 
 export default function BackofficeDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -42,31 +43,8 @@ export default function BackofficeDashboard() {
       case "charging":
         return <Charging />;
       default:
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4 text-blue-700">
-              Admin Dashboard Overview
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-blue-100 p-4 rounded shadow text-center">
-                <h3 className="text-xl font-semibold">Total Stations</h3>
-                <p className="text-3xl font-bold text-blue-600">12</p>
-              </div>
-              <div className="bg-green-100 p-4 rounded shadow text-center">
-                <h3 className="text-xl font-semibold">EV Owners</h3>
-                <p className="text-3xl font-bold text-green-600">54</p>
-              </div>
-              <div className="bg-yellow-100 p-4 rounded shadow text-center">
-                <h3 className="text-xl font-semibold">Bookings</h3>
-                <p className="text-3xl font-bold text-yellow-600">28</p>
-              </div>
-              <div className="bg-purple-100 p-4 rounded shadow text-center">
-                <h3 className="text-xl font-semibold">Operators</h3>
-                <p className="text-3xl font-bold text-purple-600">6</p>
-              </div>
-            </div>
-          </div>
-        );
+        // Replaced static overview with dynamic AdminDashboardOverview
+        return <AdminDashboardOverview setActiveTab={setActiveTab} />;
     }
   };
 
@@ -136,7 +114,7 @@ export default function BackofficeDashboard() {
 
             <li
               className={`cursor-pointer flex items-center gap-2 p-2 rounded hover:bg-blue-800 ${
-                activeTab === "bookings" && "bg-blue-800"
+                activeTab === "charging" && "bg-blue-800"
               }`}
               onClick={() => setActiveTab("charging")}
             >
