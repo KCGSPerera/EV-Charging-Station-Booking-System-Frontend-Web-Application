@@ -235,6 +235,7 @@ import {
   getMyReservations,
   approveReservation,
   regenerateReservationQr,
+  getOperatorReservationQrCode,
 } from "../../api/stationOperatorReservations";
 
 import { getChargerById } from "../../api/chargersApi";
@@ -396,6 +397,32 @@ const handleApprove = async (id) => {
       toast.error("❌ Failed to regenerate QR code.");
     }
   };
+  
+  // ---------------- VIEW QR CODE ----------------
+const handleViewQr = async (id) => {
+  try {
+    // ✅ Call the operator endpoint to fetch QR
+    const qrData = await getOperatorReservationQrCode(id);
+
+    const qrImage = qrData?.imageBase64
+      ? `data:${qrData.contentType || "image/png"};base64,${qrData.imageBase64}`
+      : null;
+
+    if (qrImage) {
+      setQrPopup({ visible: true, qrData: qrImage });
+    } else {
+      toast.warning("⚠️ No QR image available for this reservation.");
+    }
+  } catch (err) {
+    console.error("❌ View QR Error:", err);
+
+    if (err?.response?.status === 403) {
+      toast.error("🚫 You are not authorized to view this QR code.");
+    } else {
+      toast.error("❌ Failed to load reservation QR.");
+    }
+  }
+};
 
   // ---------------- FILTER BOOKINGS ----------------
   const filteredBookings =
@@ -556,6 +583,7 @@ const handleApprove = async (id) => {
         </button> */}
 
         {/* ✅ View QR button */}
+        {/*
 <button
   onClick={() => {
     const qrImage = b.qr?.imageBase64
@@ -573,7 +601,16 @@ const handleApprove = async (id) => {
 >
   <IoQrCodeOutline className="text-xl" />
 </button>
+*/}
 
+{/* View QR button (fetch via owners API) */}
+<button
+  onClick={() => handleViewQr(b.id)}
+  className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"
+  title="View QR"
+>
+  <IoQrCodeOutline className="text-xl" />
+</button>
 
         {/* 🔄 Regenerate QR */}
         {/* <button

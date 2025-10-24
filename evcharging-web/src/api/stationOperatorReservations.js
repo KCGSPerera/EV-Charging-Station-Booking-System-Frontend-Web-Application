@@ -158,3 +158,12 @@ export async function getMyReservations(filters = {}) {
     throw error;
   }
 }
+
+
+export async function getOperatorReservationQrCode(reservationId) {
+  const response = await axios.get(
+    `${API_URL}/reservations/${reservationId}/qr-code`,
+    { ...authHeader(), responseType: "text" }
+  );
+  return JSON.parse(response.data);
+}
